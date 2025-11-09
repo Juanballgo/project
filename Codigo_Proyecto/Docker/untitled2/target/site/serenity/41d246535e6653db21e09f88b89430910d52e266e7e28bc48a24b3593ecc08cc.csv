@@ -1,0 +1,5 @@
+"Story","Title","Result","Date","Stability","Duration (s)"
+"Login en la aplicación Electromovil","Inicio de sesión exitoso en Electromovil","SUCCESS","2025-11-03T13:53:47.5261764-05:00[America/Bogota]","0.0","43.14"
+"Login en la aplicación Electromovil","Inicio de sesión fallido en Electromovil","SUCCESS","2025-11-03T13:54:31.7864597-05:00[America/Bogota]","0.0","7.58"
+"Gestión de servicios y electrodomésticos por el usuario (cliente)","Solicitar un servicio técnico","SUCCESS","2025-11-03T13:54:42.4821966-05:00[America/Bogota]","0.0","27.38"
+"Gestión de servicios y electrodomésticos por el usuario (cliente)","Añadir un nuevo electrodoméstico","SUCCESS","2025-11-03T13:55:10.1737887-05:00[America/Bogota]","0.0","31.73"

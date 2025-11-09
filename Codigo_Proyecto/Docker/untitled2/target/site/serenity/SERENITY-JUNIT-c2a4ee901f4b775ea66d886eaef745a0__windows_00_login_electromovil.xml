@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><testsuite errors="0" failures="0" name="Login en la aplicación Electromovil" skipped="0" tests="2" time="50.72" timestamp="2025-11-03 01:53:47"><testcase name="Inicio de sesión exitoso en Electromovil"/><testcase name="Inicio de sesión fallido en Electromovil"/></testsuite>
