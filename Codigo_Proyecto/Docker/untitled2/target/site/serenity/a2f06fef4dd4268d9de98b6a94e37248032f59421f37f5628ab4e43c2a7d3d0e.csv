@@ -1,4 +1,0 @@
-"Story","Title","Result","Date","Stability","Duration (s)"
-"Registro de usuarios en Electromovil","Registro exitoso de un nuevo usuario","PENDING","2025-11-03T13:54:41.7479061-05:00[America/Bogota]","0.0","0.15"
-"Registro de usuarios en Electromovil","Registro fallido por contraseñas que no coinciden","PENDING","2025-11-03T13:54:41.9274437-05:00[America/Bogota]","0.0","0.11"
-"Registro de usuarios en Electromovil","Registro fallido por email ya registrado","PENDING","2025-11-03T13:54:42.066918-05:00[America/Bogota]","0.0","0.12"
