@@ -1,2 +1,4 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
 "Login and Report Progress","Update technician profile","SUCCESS","2025-11-18T19:07:51.3174238-05:00[America/Bogota]","0.0","26.11"
+"End-user (Usuario) flows","Create service using the public service form","SUCCESS","2025-11-19T08:39:13.6733131-05:00[America/Bogota]","0.0","20.85"
+"End-user (Usuario) flows","Add a new appliance from the appliances section","SUCCESS","2025-11-19T08:39:34.5864595-05:00[America/Bogota]","0.0","21.36"

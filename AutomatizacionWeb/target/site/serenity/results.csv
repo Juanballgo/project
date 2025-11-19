@@ -1,3 +1,7 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
 "Login and Report Progress","Complete technician workflow from login to report","SUCCESS","2025-11-18T19:07:10.9387261-05:00[America/Bogota]","0.0","40.32"
 "Login and Report Progress","Update technician profile","SUCCESS","2025-11-18T19:07:51.3174238-05:00[America/Bogota]","0.0","26.11"
+"End-user (Usuario) flows","Add an appliance and request a service for it","SUCCESS","2025-11-18T21:06:07.3124628-05:00[America/Bogota]","0.0","7.53"
+"End-user (Usuario) flows","Update user profile from profile modal","SUCCESS","2025-11-19T08:38:42.844224-05:00[America/Bogota]","0.0","30.77"
+"End-user (Usuario) flows","Create service using the public service form","SUCCESS","2025-11-19T08:39:13.6733131-05:00[America/Bogota]","0.0","20.85"
+"End-user (Usuario) flows","Add a new appliance from the appliances section","SUCCESS","2025-11-19T08:39:34.5864595-05:00[America/Bogota]","0.0","21.36"
