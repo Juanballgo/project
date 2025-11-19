@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/logo (2).png" alt="ElectroMóvil Logo" width="300">
+  <img src="electromovil-frontend/public/Logo1.jpg" alt="ElectroMóvil Logo" width="300">
 </div>
 
 # 🛠️ Sistema De Gestión De Servicios Técnicos 🏠  
