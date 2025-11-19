@@ -1,4 +1,5 @@
 <div align="center">
+  
   <img src="electromovil-frontend/public/Logo1.jpg" alt="ElectroMóvil Logo" width="300">
 </div>
 
