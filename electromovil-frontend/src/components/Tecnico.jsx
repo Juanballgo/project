@@ -236,43 +236,45 @@ const Tecnico = () => {
     }
   };
 
-  //validación de campos del perfil
-
+  //validación de campos del perfil - VERSIÓN CORREGIDA
   const validateField = (name, value) => {
     let error = '';
 
-    if (!value.trim()) {
+    // ✅ SOLUCIÓN: Convertir a string antes de usar .trim()
+    const stringValue = String(value || '');
+    
+    if (!stringValue.trim()) {
       return 'Este campo es obligatorio';
     }
 
     switch (name) {
       case 'name':
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(stringValue)) {
           error = 'El nombre solo debe contener letras';
         }
         break;
       case 'email':
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stringValue)) {
           error = 'Correo electrónico no válido';
         }
         break;
       case 'phone':
-        if (!/^\d{7,10}$/.test(value)) {
+        if (!/^\d{7,10}$/.test(stringValue)) {
           error = 'Debe tener entre 7 y 10 dígitos';
         }
         break;
       case 'address':
-        if (value.trim().length < 5) {
+        if (stringValue.trim().length < 5) {
           error = 'La dirección debe tener al menos 5 caracteres';
         }
         break;
       case 'password':
-        if (value && value.length < 8) {
+        if (stringValue && stringValue.length < 8) {
           error = 'La contraseña debe tener al menos 8 caracteres';
         }
         break;
       case 'password_confirmation':
-        if (value !== profile.password) {
+        if (stringValue !== profile.password) {
           error = 'Las contraseñas no coinciden';
         }
         break;

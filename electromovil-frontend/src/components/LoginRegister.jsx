@@ -175,7 +175,60 @@ const LoginRegister = ({ onLoginSuccess }) => {
       navigate(redirectPath);
       onLoginSuccess?.(user);
     } catch (error) {
-      setErrors({ general: error.response?.data?.message || 'Error al iniciar sesión' });
+      console.error('Error en login:', error);
+      // Determine a friendly message based on server response or network error
+      let friendly = 'Error al iniciar sesión';
+      // reset field-specific errors
+      let fieldErrors = {};
+
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data || {};
+        const serverMsg = (data.message || '').toString().toLowerCase();
+
+        // Server-side 5xx or messages mentioning connection/database -> connection error
+        if (status >= 500 || serverMsg.includes('connection') || serverMsg.includes('conex') || serverMsg.includes('database') || serverMsg.includes('db')) {
+          friendly = 'Error de conexión';
+        }
+        // Unauthorized - try to distinguish between email not found and wrong password
+        else if (status === 401) {
+          if (serverMsg.includes('password') || serverMsg.includes('contrase') || serverMsg.includes('invalid credentials') || serverMsg.includes('credenciales')) {
+            friendly = 'Contraseña incorrecta';
+            fieldErrors.password = 'Contraseña incorrecta';
+          } else if (serverMsg.includes('user') || serverMsg.includes('email') || serverMsg.includes('no encontrado') || serverMsg.includes('not found')) {
+            friendly = 'Email no registrado';
+            fieldErrors.email = 'Email no registrado';
+          } else {
+            friendly = data.message || 'Credenciales inválidas';
+          }
+        }
+        // Validation-like responses with errors object
+        else if (data.errors) {
+          if (data.errors.password) {
+            fieldErrors.password = Array.isArray(data.errors.password) ? data.errors.password.join(' ') : data.errors.password;
+            friendly = fieldErrors.password;
+          } else if (data.errors.email) {
+            fieldErrors.email = Array.isArray(data.errors.email) ? data.errors.email.join(' ') : data.errors.email;
+            friendly = fieldErrors.email;
+          } else if (data.message) {
+            friendly = data.message;
+          }
+        } else if (data.message) {
+          // generic server message
+          if (data.message.toString().toLowerCase().includes('connection') || data.message.toString().toLowerCase().includes('conex')) {
+            friendly = 'Error de conexión';
+          } else {
+            friendly = data.message;
+          }
+        }
+      } else if (error.request) {
+        // network error / no response
+        friendly = 'Error de conexión';
+      } else {
+        friendly = error.message || friendly;
+      }
+
+      setErrors({ ...fieldErrors, general: friendly });
     } finally {
       setIsLoading(false);
     }
