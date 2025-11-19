@@ -1,3 +1,4 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
-"End-user (Usuario) flows","Create service using the public service form","ERROR","2025-11-18T21:15:18.8474522-05:00[America/Bogota]","0.0","1.7"
-"End-user (Usuario) flows","Add a new appliance from the appliances section","ERROR","2025-11-18T21:15:20.9911935-05:00[America/Bogota]","0.0","0.27"
+"Admin area flows","Open users management and verify listing","ERROR","2025-11-19T08:55:37.8873237-05:00[America/Bogota]","0.0","20.99"
+"Admin area flows","Open services management and verify listing","ERROR","2025-11-19T08:55:59.2239522-05:00[America/Bogota]","0.0","37.83"
+"Admin area flows","Open invoices management and verify listing","ERROR","2025-11-19T08:56:37.1131699-05:00[America/Bogota]","0.0","32.15"

@@ -1,4 +1,7 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
+"Admin area flows","Open admin dashboard and verify widgets","SUCCESS","2025-11-19T08:55:06.0020124-05:00[America/Bogota]","0.0","31.81"
+"Admin area flows","Open reports management and verify that reports are accessible","SUCCESS","2025-11-19T08:57:09.3561757-05:00[America/Bogota]","0.0","22.69"
+"Admin area - create resources","Create a new service from admin UI","SUCCESS","2025-11-19T09:52:50.0640674-05:00[America/Bogota]","0.0","35.78"
 "Login and Report Progress","Complete technician workflow from login to report","SUCCESS","2025-11-18T19:07:10.9387261-05:00[America/Bogota]","0.0","40.32"
 "Login and Report Progress","Update technician profile","SUCCESS","2025-11-18T19:07:51.3174238-05:00[America/Bogota]","0.0","26.11"
 "End-user (Usuario) flows","Add an appliance and request a service for it","SUCCESS","2025-11-18T21:06:07.3124628-05:00[America/Bogota]","0.0","7.53"

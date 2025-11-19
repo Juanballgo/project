@@ -1,0 +1,3 @@
+"Story","Title","Result","Date","Stability","Duration (s)"
+"Admin area flows","Open users management and verify listing","ERROR","2025-11-19T08:55:37.8873237-05:00[America/Bogota]","0.0","20.99"
+"Admin area flows","Open reports management and verify that reports are accessible","SUCCESS","2025-11-19T08:57:09.3561757-05:00[America/Bogota]","0.0","22.69"
