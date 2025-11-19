@@ -1,0 +1,55 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'net.serenity-bdd.serenity-gradle-plugin' version '3.6.7'
+}
+
+group = 'com.automatizacion'
+version = '1.0.0'
+
+sourceCompatibility = 17
+targetCompatibility = 17
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    serenityVersion = '3.6.22'
+    cucumberVersion = '7.11.2'
+}
+
+dependencies {
+    implementation "net.serenity-bdd:serenity-core:$serenityVersion"
+    implementation "net.serenity-bdd:serenity-junit:$serenityVersion"
+    implementation "net.serenity-bdd:serenity-cucumber:$serenityVersion"
+    implementation "net.serenity-bdd:serenity-screenplay:$serenityVersion"
+    implementation "net.serenity-bdd:serenity-screenplay-webdriver:$serenityVersion"
+    implementation "net.serenity-bdd:serenity-ensure:$serenityVersion"
+    implementation 'org.seleniumhq.selenium:selenium-java:4.11.0'
+    implementation 'io.github.bonigarcia:webdrivermanager:5.5.0'
+    implementation "io.cucumber:cucumber-java:$cucumberVersion"
+    implementation "io.cucumber:cucumber-junit:$cucumberVersion"
+    testImplementation 'junit:junit:4.13.2'
+    implementation 'org.slf4j:slf4j-simple:2.0.7'
+}
+
+test {
+    testLogging {
+        showStandardStreams = true
+        events "passed", "failed", "skipped"
+    }
+    systemProperties System.getProperties()
+    systemProperty "cucumber.filter.tags", System.getProperty("cucumber.filter.tags", "")
+    ignoreFailures = true
+}
+
+// CONFIGURACIÓN SERENITY CORREGIDA - SIN LLAVES EXTRA
+serenity {
+    requirementsBaseDir = "src/test/resources/features"
+    testRoot = "runners"
+}
+
+test.finalizedBy aggregate
+
+gradle.startParameter.continueOnFailure = true
