@@ -1,5 +1,2 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
 "Admin area flows","Open admin dashboard and verify widgets","SUCCESS","2025-11-19T08:55:06.0020124-05:00[America/Bogota]","0.0","31.81"
-"Admin area - create resources","Create a new service from admin UI","SUCCESS","2025-11-19T09:52:50.0640674-05:00[America/Bogota]","0.0","35.78"
-"Login and Report Progress","Complete technician workflow from login to report","SUCCESS","2025-11-18T19:07:10.9387261-05:00[America/Bogota]","0.0","40.32"
-"End-user (Usuario) flows","Update user profile from profile modal","SUCCESS","2025-11-19T08:38:42.844224-05:00[America/Bogota]","0.0","30.77"

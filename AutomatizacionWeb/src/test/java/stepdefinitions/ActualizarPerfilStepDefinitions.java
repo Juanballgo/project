@@ -51,8 +51,8 @@ public class ActualizarPerfilStepDefinitions {
             // Correo electrónico
             WebElement campoCorreo = driver.findElement(By.name("email"));
             campoCorreo.clear();
-            campoCorreo.sendKeys("andres.actualizado@gmail.com");
-            System.out.println("EXITO: Correo electronico ingresado: andres.actualizado@gmail.com");
+            campoCorreo.sendKeys("andrestecnicos@gmail.com");
+            System.out.println("EXITO: Correo electronico ingresado: andrestecnicos@gmail.com");
 
             // Teléfono
             WebElement campoTelefono = driver.findElement(By.name("phone"));
@@ -73,7 +73,7 @@ public class ActualizarPerfilStepDefinitions {
 
             // Nueva contraseña
             WebElement campoNuevaContrasena = driver.findElement(By.name("password"));
-            campoNuevaContrasena.sendKeys("nueva123456");
+            campoNuevaContrasena.sendKeys("123456789");
             System.out.println("EXITO: Nueva contraseña ingresada");
 
             // CONFIRMAR NUEVA CONTRASEÑA - MÚLTIPLES ESTRATEGIAS
@@ -111,7 +111,7 @@ public class ActualizarPerfilStepDefinitions {
 
             if (campoConfirmarContrasena != null) {
                 campoConfirmarContrasena.clear();
-                campoConfirmarContrasena.sendKeys("nueva123456");
+                campoConfirmarContrasena.sendKeys("123456789");
                 System.out.println("EXITO: Confirmar contraseña ingresada");
             } else {
                 System.out.println("ERROR: No se pudo encontrar el campo Confirmar nueva contraseña");

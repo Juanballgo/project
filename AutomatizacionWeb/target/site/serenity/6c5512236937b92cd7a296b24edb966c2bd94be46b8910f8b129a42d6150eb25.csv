@@ -1,2 +1,3 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
 "End-user (Usuario) flows","Add an appliance and request a service for it","SUCCESS","2025-11-18T21:06:07.3124628-05:00[America/Bogota]","0.0","7.53"
+"End-user (Usuario) flows","Create service using the public service form","SUCCESS","2025-11-19T19:58:11.3463081-05:00[America/Bogota]","0.0","9.59"

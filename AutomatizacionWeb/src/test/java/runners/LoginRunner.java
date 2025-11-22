@@ -6,11 +6,12 @@ import net.serenitybdd.cucumber.CucumberWithSerenity;
 
 @RunWith(CucumberWithSerenity.class)
 @CucumberOptions(
-        features = "src/test/resources/features",
+        // Run only the login-related scenarios to avoid duplicating other feature runs
+        features = "src/test/resources/features/login.feature",
         glue = {"stepdefinitions", "hooks"},
         plugin = {
                 "pretty",
-                "json:target/cucumber.json"
+                "json:target/cucumber-login.json"
         },
         monochrome = true
 )

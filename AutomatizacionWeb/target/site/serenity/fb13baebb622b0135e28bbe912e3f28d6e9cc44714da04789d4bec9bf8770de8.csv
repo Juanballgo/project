@@ -1,3 +1,4 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
 "Admin area flows","Open services management and verify listing","ERROR","2025-11-19T08:55:59.2239522-05:00[America/Bogota]","0.0","37.83"
 "Admin area flows","Open invoices management and verify listing","ERROR","2025-11-19T08:56:37.1131699-05:00[America/Bogota]","0.0","32.15"
+"Admin area - create resources","Create a new user from admin UI","FAILURE","2025-11-19T19:56:15.0156168-05:00[America/Bogota]","0.0","42.03"
