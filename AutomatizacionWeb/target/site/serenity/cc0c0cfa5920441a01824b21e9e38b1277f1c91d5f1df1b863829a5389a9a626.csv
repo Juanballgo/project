@@ -1,0 +1,3 @@
+"Story","Title","Result","Date","Stability","Duration (s)"
+"Admin area - create resources","Create a new user from admin UI","ERROR","2025-11-25T18:56:36.6128231-05:00[America/Bogota]","0.0","13.93"
+"Admin area - create resources","Create a new service from admin UI","ERROR","2025-11-25T18:56:50.7725431-05:00[America/Bogota]","0.0","0.21"

@@ -1,2 +1,6 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
-"End-user (Usuario) flows","Create service using the public service form","ERROR","2025-11-18T21:15:18.8474522-05:00[America/Bogota]","0.0","1.7"
+"Login and Report Progress","Complete technician workflow from login to report","ERROR","2025-11-25T18:56:53.1171265-05:00[America/Bogota]","0.0","9.03"
+"Login and Report Progress","Update technician profile","ERROR","2025-11-25T18:57:02.286971-05:00[America/Bogota]","0.0","2.68"
+"End-user (Usuario) flows","Update user profile from profile modal","ERROR","2025-11-25T18:57:05.6514589-05:00[America/Bogota]","0.0","7.93"
+"End-user (Usuario) flows","Create service using the public service form","ERROR","2025-11-25T18:57:13.6295254-05:00[America/Bogota]","0.0","5.28"
+"End-user (Usuario) flows","Add a new appliance from the appliances section","ERROR","2025-11-25T18:57:19.0050128-05:00[America/Bogota]","0.0","2.64"

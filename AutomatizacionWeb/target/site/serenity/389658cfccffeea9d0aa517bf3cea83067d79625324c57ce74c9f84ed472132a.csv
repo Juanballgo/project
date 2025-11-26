@@ -1,5 +1,5 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
 "End-user (Usuario) flows","Add an appliance and request a service for it","SUCCESS","2025-11-18T21:06:07.3124628-05:00[America/Bogota]","0.0","7.53"
-"End-user (Usuario) flows","Update user profile from profile modal","SUCCESS","2025-11-19T19:57:58.6880999-05:00[America/Bogota]","0.0","12.65"
-"End-user (Usuario) flows","Create service using the public service form","SUCCESS","2025-11-19T19:58:11.3463081-05:00[America/Bogota]","0.0","9.59"
-"End-user (Usuario) flows","Add a new appliance from the appliances section","SUCCESS","2025-11-19T19:58:20.950967-05:00[America/Bogota]","0.0","12.16"
+"End-user (Usuario) flows","Update user profile from profile modal","SUCCESS","2025-11-25T19:49:50.9015729-05:00[America/Bogota]","0.0","25.16"
+"End-user (Usuario) flows","Create service using the public service form","SUCCESS","2025-11-25T19:50:16.0839438-05:00[America/Bogota]","0.0","15.5"
+"End-user (Usuario) flows","Add a new appliance from the appliances section","SUCCESS","2025-11-25T19:50:31.6088326-05:00[America/Bogota]","0.0","17.62"

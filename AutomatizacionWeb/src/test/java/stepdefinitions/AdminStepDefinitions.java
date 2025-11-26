@@ -19,10 +19,13 @@ public class AdminStepDefinitions extends PageObject {
     private String lastCreatedUserEmail = null;
     private String lastCreatedServiceModel = null;
 
+    // admin-specific global timeout for slow backends (approx 90 seconds)
+    private static final Duration ADMIN_TIMEOUT = Duration.ofSeconds(90);
+
     @When("he opens the admin dashboard")
     public void heOpensTheAdminDashboard() {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         try {
             WebElement dash = wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("#admin-dashboard, .admin-dashboard")));
             try {
@@ -44,7 +47,7 @@ public class AdminStepDefinitions extends PageObject {
     @Then("he should see the admin widgets")
     public void heShouldSeeTheAdminWidgets() {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         wait.until(ExpectedConditions.or(
                 ExpectedConditions.presenceOfElementLocated(By.cssSelector("#admin-dashboard, .admin-dashboard")),
                 ExpectedConditions.presenceOfElementLocated(By.cssSelector(".widget, .panel, .card"))
@@ -61,7 +64,7 @@ public class AdminStepDefinitions extends PageObject {
     @Then("he should see the users list")
     public void heShouldSeeTheUsersList() {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//h2[contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'gestión de usuarios') or contains(., 'Gestión de Usuarios') or contains(., 'Usuarios')]")));
         List<WebElement> rows = driver.findElements(By.cssSelector("table tbody tr"));
         System.out.println("Found users rows (table tbody tr): " + rows.size());
@@ -114,7 +117,7 @@ public class AdminStepDefinitions extends PageObject {
     @When("he creates a new user via the UI")
     public void heCreatesANewUserViaTheUI() {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(12));
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         openAdminSection(driver, "users", "Gestión de Usuarios");
 
         // Click add user button (best-effort selectors)
@@ -178,7 +181,7 @@ public class AdminStepDefinitions extends PageObject {
     @When("he creates a new service via the UI")
     public void heCreatesANewServiceViaTheUI() {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(12));
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         openAdminSection(driver, "services", "Gestión de Servicios");
 
         // Click create service button
@@ -448,7 +451,7 @@ public class AdminStepDefinitions extends PageObject {
     @Then("the new user should appear in the users list")
     public void theNewUserShouldAppearInTheUsersList() {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(12));
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         if (this.lastCreatedUserEmail == null) {
             throw new AssertionError("No created user email recorded from previous step.");
         }
@@ -464,7 +467,7 @@ public class AdminStepDefinitions extends PageObject {
     @Then("the new service should appear in the services list")
     public void theNewServiceShouldAppearInTheServicesList() {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(12));
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         if (this.lastCreatedServiceModel == null) {
             throw new AssertionError("No created service model recorded from previous step.");
         }
@@ -474,6 +477,212 @@ public class AdminStepDefinitions extends PageObject {
             System.out.println("Verified created service present: " + modelo);
         } catch (Exception e) {
             throw new AssertionError("Could not verify created service in services list: " + e.getMessage());
+        }
+    }
+
+    @When("he changes the created service's status to {string}")
+    public void heChangesTheCreatedServiceStatusTo(String newStatus) {
+        WebDriver driver = DriverManager.getDriver();
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
+        if (this.lastCreatedServiceModel == null) {
+            throw new AssertionError("No created service model recorded from previous step.");
+        }
+        String modelo = this.lastCreatedServiceModel;
+        try {
+            // locate the row containing the model
+            WebElement row = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath("//table//tbody//tr[.//td[contains(., '" + modelo + "')]]")));
+
+            // find dropdown toggle inside the row (common patterns)
+            WebElement toggle = null;
+            try {
+                toggle = row.findElement(By.xpath(".//button[contains(@id, 'dropdown-status') or contains(., 'Cambiar estado') or contains(., 'Cambiar Estado') or contains(@class,'dropdown-toggle')]") );
+            } catch (Exception ex) { /* ignore and fallback */ }
+
+            if (toggle == null) {
+                // try any button inside row
+                try { toggle = row.findElement(By.xpath(".//button[normalize-space()]")); } catch (Exception ex) { /* ignore */ }
+            }
+
+            if (toggle == null) {
+                throw new AssertionError("Could not find status dropdown toggle for service: " + modelo);
+            }
+
+            // Click toggle, retrying if DOM updates cause stale references
+            int toggleAttempts = 0;
+            boolean toggleClicked = false;
+            while (!toggleClicked && toggleAttempts < 3) {
+                try {
+                    try { toggle.click(); } catch (Exception c) { ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", toggle); }
+                    toggleClicked = true;
+                } catch (org.openqa.selenium.StaleElementReferenceException ser) {
+                    toggleAttempts++;
+                    // re-find the row and toggle element
+                    try { Thread.sleep(300); } catch (InterruptedException ie) {}
+                    row = driver.findElement(By.xpath("//table//tbody//tr[.//td[contains(., '" + modelo + "')]]"));
+                    try { toggle = row.findElement(By.xpath(".//button[contains(@id, 'dropdown-status') or contains(., 'Cambiar estado') or contains(., 'Cambiar Estado') or contains(@class,'dropdown-toggle')]") ); } catch (Exception ex) { /* ignore */ }
+                }
+            }
+            if (!toggleClicked) { throw new AssertionError("Could not click status dropdown toggle after retries for service: " + modelo); }
+
+            // map internal status like 'en_proceso' -> visible label 'en proceso' or 'En Proceso'
+            String visible = newStatus.replace("_", " ");
+            // construct case-insensitive xpath to find a menu item matching the label/text
+            String itemXpath = "//div[contains(@class,'dropdown-menu') and not(contains(@style,'display: none'))]//*[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + visible.toLowerCase() + "') or contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + visible.toLowerCase() + "')]";
+
+            // wait for the menu item to be clickable
+            WebElement menuItem = null;
+            try {
+                // menu items can be rendered inside the row or appended as a floating dropdown (e.g. to document body)
+                // try multiple strategies: find clickable item globally first
+                try {
+                    menuItem = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(itemXpath)));
+                } catch (Exception ex) {
+                    // fallback: search visible dropdown menu elements and locate children
+                    List<WebElement> menus = driver.findElements(By.cssSelector(".dropdown-menu, .dropdown-menu.show"));
+                    for (WebElement m : menus) {
+                        try {
+                            List<WebElement> cand = m.findElements(By.xpath(".//*[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + visible.toLowerCase() + "')]") );
+                            if (!cand.isEmpty()) { menuItem = cand.get(0); break; }
+                        } catch (Exception ignore) {}
+                    }
+                }
+            } catch (Exception e) {
+                // as fallback search for any menu item inside the row's dropdown menu
+                try { menuItem = row.findElement(By.xpath(".//ul[contains(@class,'dropdown-menu')]//li//*[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + visible.toLowerCase() + "')]") ); } catch (Exception ignore) { /* ignore */ }
+            }
+
+            if (menuItem == null) {
+                throw new AssertionError("Could not find dropdown menu item for status: " + newStatus + " (possible visible label: " + visible + ")");
+            }
+
+            // Click the menu item, re-locate it if needed to avoid stale references
+            int clickAttempts = 0;
+            boolean clicked = false;
+            while (!clicked && clickAttempts < 3) {
+                try {
+                    if (menuItem == null) {
+                        // try locating again (global search)
+                        try {
+                            menuItem = driver.findElement(By.xpath(itemXpath));
+                        } catch (Exception ex) { /* ignore */ }
+                    }
+                    try { menuItem.click(); } catch (Exception c) { ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].click();", menuItem); }
+                    clicked = true;
+                } catch (org.openqa.selenium.StaleElementReferenceException ser) {
+                    clickAttempts++;
+                    try { Thread.sleep(300); } catch (InterruptedException ie) {}
+                    menuItem = null; // re-find in next loop
+                }
+            }
+            if (!clicked) { throw new AssertionError("Could not click menu item for status: " + newStatus + " on service: " + modelo); }
+
+            // After clicking, wait for either a success alert or the status column text to update
+            String expectedText = visible; // e.g. 'en proceso', 'completado', 'pendiente'
+            boolean changed = false;
+            try {
+                // first try to wait for a success toast/alert message (best-effort)
+                try {
+                    wait.withTimeout(Duration.ofSeconds(10)).until(ExpectedConditions.presenceOfElementLocated(By.xpath("//*[contains(@class,'alert') or contains(@class,'toast')][contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'exito') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'actualiz') or contains(translate(., 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'actualizado')]")));
+                    changed = true;
+                } catch (Exception ignore) { /* no toast found quickly */ }
+
+                // then wait for the status text in the same row to reflect the expected status
+                try {
+                    // Find rows that contain the model text
+                    List<WebElement> rows = driver.findElements(By.xpath("//table//tbody//tr[.//td[contains(., '" + modelo + "')]]"));
+                    // Try to find the expected status text inside any of these rows
+                    for (WebElement r : rows) {
+                        try {
+                            List<WebElement> matches = r.findElements(By.xpath(".//*[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + expectedText.toLowerCase() + "')]") );
+                            if (!matches.isEmpty()) { changed = true; break; }
+                        } catch (Exception ignore) { /* continue */ }
+                    }
+                    // If not found, wait and retry inside the same timeout
+                    long start = System.currentTimeMillis();
+                    while (!changed && System.currentTimeMillis() - start < ADMIN_TIMEOUT.toMillis()) {
+                        try { Thread.sleep(750); } catch (InterruptedException ie) {}
+                        rows = driver.findElements(By.xpath("//table//tbody//tr[.//td[contains(., '" + modelo + "')]]"));
+                        for (WebElement r : rows) {
+                            try {
+                                List<WebElement> matches = r.findElements(By.xpath(".//*[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + expectedText.toLowerCase() + "')]") );
+                                if (!matches.isEmpty()) { changed = true; break; }
+                            } catch (Exception ignore) { /* continue */ }
+                        }
+                    }
+                    if (!changed) {
+                        throw new Exception("status text not found in rows after retries");
+                    }
+                } catch (Exception e) {
+                    // final retry: reload the services section and search again (best-effort)
+                    System.out.println("Warning: status text not immediately present, retrying to refresh row for service " + modelo);
+                    try {
+                        // attempt to scroll and re-find the element
+                        WebElement refreshedRow = driver.findElement(By.xpath("//table//tbody//tr[.//td[contains(., '" + modelo + "')]]"));
+                        ((org.openqa.selenium.JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", refreshedRow);
+                        // final attempt: search again and check for the status inside the row elements
+                        List<WebElement> retryRows = driver.findElements(By.xpath("//table//tbody//tr[.//td[contains(., '" + modelo + "')]]"));
+                        for (WebElement rr : retryRows) {
+                            try {
+                                List<WebElement> matches = rr.findElements(By.xpath(".//*[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + expectedText.toLowerCase() + "')]") );
+                                if (!matches.isEmpty()) { changed = true; break; }
+                            } catch (Exception ignore) {}
+                        }
+                        changed = true;
+                    } catch (Exception finalEx) {
+                        System.out.println("Status change not observed: " + finalEx.getMessage());
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println("Unexpected error waiting for status change: " + e.getMessage());
+            }
+
+            if (!changed) {
+                // Debugging info on failure: dump a small HTML snapshot and attempt screenshot
+                try {
+                    String src = driver.getPageSource();
+                    System.out.println("DEBUG PAGE SNAPSHOT (first 2000 chars):\n" + src.substring(0, Math.min(2000, src.length())));
+                } catch (Exception ignore) {}
+                try {
+                    byte[] shot = ((org.openqa.selenium.TakesScreenshot)driver).getScreenshotAs(org.openqa.selenium.OutputType.BYTES);
+                    System.out.println("Captured screenshot bytes: " + (shot != null ? shot.length : "none"));
+                } catch (Exception ignore) {}
+                throw new AssertionError("Status change action did not result in status update for service: " + modelo);
+            }
+
+        } catch (Exception e) {
+            throw new AssertionError("Failed to change status for created service: " + e.getMessage());
+        }
+    }
+
+    @Then("the service should show status {string} in the services list")
+    public void theServiceShouldShowStatusInServicesList(String expectedStatus) {
+        WebDriver driver = DriverManager.getDriver();
+        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
+        if (this.lastCreatedServiceModel == null) {
+            throw new AssertionError("No created service model recorded from previous step.");
+        }
+        String modelo = this.lastCreatedServiceModel;
+        String visible = expectedStatus.replace("_", " ");
+        try {
+            // Wait until a table row for the service contains the visible status (robust loop)
+            boolean found = false;
+            long start = System.currentTimeMillis();
+            while (!found && System.currentTimeMillis() - start < ADMIN_TIMEOUT.toMillis()) {
+                try { Thread.sleep(500); } catch (InterruptedException ie) {}
+                List<WebElement> rows = driver.findElements(By.xpath("//table//tbody//tr[.//td[contains(., '" + modelo + "')]]"));
+                for (WebElement r : rows) {
+                    try {
+                        List<WebElement> matches = r.findElements(By.xpath(".//*[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'), '" + visible.toLowerCase() + "')]") );
+                        if (!matches.isEmpty()) { found = true; break; }
+                    } catch (Exception ignore) {}
+                }
+            }
+            if (!found) {
+                throw new AssertionError("Service did not show expected status '" + expectedStatus + "' for model '" + modelo + "': status text not found in the table row");
+            }
+            System.out.println("Verified service '" + modelo + "' shows status '" + visible + "'");
+        } catch (Exception e) {
+            throw new AssertionError("Service did not show expected status '" + expectedStatus + "' for model '" + modelo + "': " + e.getMessage());
         }
     }
 

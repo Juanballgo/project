@@ -1,2 +1,6 @@
 "Story","Title","Result","Date","Stability","Duration (s)"
-"Admin area - create resources","Create a new service from admin UI","SUCCESS","2025-11-19T19:56:57.1541677-05:00[America/Bogota]","0.0","10.82"
+"Admin area - create resources","Create a new user from admin UI","SUCCESS","2025-11-26T18:12:11.2373695-05:00[America/Bogota]","0.0","50.54"
+"Admin area - create resources","Create a new service from admin UI","SUCCESS","2025-11-26T18:13:01.9013333-05:00[America/Bogota]","0.0","40.86"
+"Admin area - create resources","Create a service and change its status to en_proceso","SUCCESS","2025-11-26T18:13:42.9377376-05:00[America/Bogota]","0.0","46.6"
+"Admin area - create resources","Create a service and change its status to ""completado""","SUCCESS","2025-11-26T18:14:29.5684742-05:00[America/Bogota]","0.0","49.69"
+"Admin area - create resources","Create a service and change its status to ""pendiente""","SUCCESS","2025-11-26T18:15:19.4470265-05:00[America/Bogota]","0.0","96.1"

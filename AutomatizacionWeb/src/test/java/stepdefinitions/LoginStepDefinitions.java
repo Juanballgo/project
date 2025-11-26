@@ -8,6 +8,7 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 public class LoginStepDefinitions {
 
@@ -19,9 +20,15 @@ public class LoginStepDefinitions {
         // Solo inicializar el driver si no existe
         if (DriverManager.getDriver() == null) {
             WebDriverManager.chromedriver().setup();
-            WebDriver driver = new ChromeDriver();
+            ChromeOptions options = new ChromeOptions();
+            // Ensure visible Chrome window
+            options.addArguments("--start-maximized");
+            options.addArguments("--disable-infobars");
+            options.addArguments("--disable-extensions");
+            // Do not set headless; keep browser visible
+            WebDriver driver = new ChromeDriver(options);
             DriverManager.setDriver(driver);
-            System.out.println("SUCCESS: New Chrome driver created");
+            System.out.println("SUCCESS: New Chrome driver created (visible)");
         }
 
         WebDriver driver = DriverManager.getDriver();
