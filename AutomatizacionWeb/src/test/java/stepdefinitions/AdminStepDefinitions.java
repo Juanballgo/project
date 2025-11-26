@@ -657,7 +657,7 @@ public class AdminStepDefinitions extends PageObject {
     @Then("the service should show status {string} in the services list")
     public void theServiceShouldShowStatusInServicesList(String expectedStatus) {
         WebDriver driver = DriverManager.getDriver();
-        WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
+        //WebDriverWait wait = new WebDriverWait(driver, ADMIN_TIMEOUT);
         if (this.lastCreatedServiceModel == null) {
             throw new AssertionError("No created service model recorded from previous step.");
         }
