@@ -68,7 +68,7 @@ public class ActualizarPerfilStepDefinitions {
 
             // Contraseña actual
             WebElement campoContrasenaActual = driver.findElement(By.name("current_password"));
-            campoContrasenaActual.sendKeys("12345679");
+            campoContrasenaActual.sendKeys("123456789");
             System.out.println("EXITO: Contraseña actual ingresada");
 
             // Nueva contraseña
