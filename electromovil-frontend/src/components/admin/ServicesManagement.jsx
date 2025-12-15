@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Form, Modal, Alert, Badge, Dropdown } from 'react-bootstrap';
-import apiService, { api } from '../../services/api.js'; // solo necesitas esta línea
+import apiService, { api } from '../../services/api.js';
 import { FaEdit, FaExchangeAlt } from "react-icons/fa";
+import '../../assets/admin.css';
 
 const ServicesManagement = () => {
   const [services, setServices] = useState([]);
@@ -16,16 +17,17 @@ const ServicesManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  useEffect(() => {
-    fetchServices();
-    fetchTechnicians();
-    fetchcient();
-  }, []);
+  const authConfig = () => {
+    const token = localStorage.getItem('auth_token');
+    return token
+      ? { headers: { Authorization: `Bearer ${token}` } }
+      : {};
+  };
 
-  useEffect(() => {
-    filterServices(searchTerm);
-    setCurrentPage(1);
-  }, [searchTerm, services]);
+  const showAlert = (message, variant) => {
+    setAlert({ show: true, message, variant });
+    setTimeout(() => setAlert(prev => ({ ...prev, show: false })), 3000);
+  };
 
   const fetchServices = async () => {
     setLoading(true);
@@ -34,35 +36,67 @@ const ServicesManagement = () => {
       setServices(response.data);
       setFilteredServices(response.data);
     } catch (error) {
+      console.error(error);
       showAlert('Error al cargar servicios', 'danger');
     } finally {
       setLoading(false);
     }
   };
 
-  //consulta de tecnicos
   const fetchTechnicians = async () => {
     try {
-      const response = await api.get('/users/by-role?role=tecnico');
+      const response = await api.get('/users/by-role?role=tecnico', authConfig());
       setTechnicians(response.data);
     } catch (error) {
+      console.error(error);
       showAlert('Error al cargar técnicos', 'danger');
     }
   };
 
   const fetchcient = async () => {
     try {
-      const response = await api.get('/users/by-role?role=cliente');
+      const response = await api.get('/users/by-role?role=cliente', authConfig());
       setcient(response.data);
     } catch (error) {
+      console.error(error);
       showAlert('Error al cargar clientes', 'danger');
     }
   };
 
-  const showAlert = (message, variant) => {
-    setAlert({ show: true, message, variant });
-    setTimeout(() => setAlert(prev => ({ ...prev, show: false })), 3000);
-  };
+  useEffect(() => {
+    fetchServices();
+    fetchTechnicians();
+    fetchcient();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filterServices = useCallback((term) => {
+    const lowerTerm = (term || '').toLowerCase().trim();
+
+    const filtered = services.filter(service => {
+      const tecnicoName = service.tecnico?.name?.toLowerCase() || '';
+      const tieneTecnico = tecnicoName.length > 0;
+
+      const matchesTecnicoNoAsignado = lowerTerm === 'no asignado' && !tieneTecnico;
+
+      return (
+        service.tipo_equipo?.toLowerCase().includes(lowerTerm) ||
+        service.marca?.toLowerCase().includes(lowerTerm) ||
+        service.modelo?.toLowerCase().includes(lowerTerm) ||
+        service.descripcion_problema?.toLowerCase().includes(lowerTerm) ||
+        service.estado?.toLowerCase().includes(lowerTerm) ||
+        matchesTecnicoNoAsignado ||
+        tecnicoName.includes(lowerTerm)
+      );
+    });
+
+    setFilteredServices(filtered);
+  }, [services]);
+
+  useEffect(() => {
+    filterServices(searchTerm);
+    setCurrentPage(1);
+  }, [searchTerm, filterServices]);
 
   const handleEdit = (service) => {
     setCurrentService({
@@ -87,10 +121,15 @@ const ServicesManagement = () => {
 
   const handleStatusChange = async (serviceId, newStatus) => {
     try {
-      await api.put(`/servicios/${serviceId}`, { estado: newStatus });
-      fetchServices();
+      await api.put(
+        `/servicios/${serviceId}`,
+        { estado: newStatus },
+        authConfig()
+      );
+      await fetchServices();
       showAlert('Estado del servicio actualizado', 'success');
     } catch (error) {
+      console.error(error);
       showAlert('Error al actualizar servicio', 'danger');
     }
   };
@@ -116,15 +155,19 @@ const ServicesManagement = () => {
       };
 
       if (currentService.id) {
-        await api.put(`/servicios/${currentService.id}`, payload);
+        await api.put(`/servicios/${currentService.id}`, payload, authConfig());
       } else {
-        await api.post('/servicios', payload);
+        await api.post('/servicios', payload, authConfig());
       }
 
       setShowModal(false);
-      fetchServices();
-      showAlert(`Servicio ${currentService.id ? 'actualizado' : 'creado'} correctamente`, 'success');
+      await fetchServices();
+      showAlert(
+        `Servicio ${currentService.id ? 'actualizado' : 'creado'} correctamente`,
+        'success'
+      );
     } catch (error) {
+      console.error(error);
       showAlert('Error al guardar servicio', 'danger');
     }
   };
@@ -136,31 +179,9 @@ const ServicesManagement = () => {
       completado: 'success',
       cancelado: 'danger'
     };
-    return <Badge bg={variants[status]}>{status.replace('_', ' ')}</Badge>;
+    return <Badge bg={variants[status]}>{String(status).replace('_', ' ')}</Badge>;
   };
 
-  const filterServices = (term) => {
-    const lowerTerm = term.toLowerCase().trim();
-
-    const filtered = services.filter(service => {
-      const tecnicoName = service.tecnico?.name?.toLowerCase() || '';
-      const tieneTecnico = tecnicoName.length > 0;
-
-      const matchesTecnicoNoAsignado = lowerTerm === 'no asignado' && !tieneTecnico;
-
-      return (
-        service.tipo_equipo?.toLowerCase().includes(lowerTerm) ||
-        service.marca?.toLowerCase().includes(lowerTerm) ||
-        service.modelo?.toLowerCase().includes(lowerTerm) ||
-        service.descripcion_problema?.toLowerCase().includes(lowerTerm) ||
-        service.estado?.toLowerCase().includes(lowerTerm) ||
-        matchesTecnicoNoAsignado ||   // matches "No asignado"
-        tecnicoName.includes(lowerTerm)  // busca por nombre de técnico
-      );
-    });
-
-    setFilteredServices(filtered);
-  };
   if (loading) {
     return (
       <div className="custom-spinner-container">
@@ -169,21 +190,27 @@ const ServicesManagement = () => {
       </div>
     );
   }
+
   const totalPages = Math.ceil(filteredServices.length / pageSize);
   const paginatedServices = filteredServices.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+
   return (
     <div className="p-4">
       {alert.show && <Alert variant={alert.variant}>{alert.message}</Alert>}
 
-      <div className="d-flex justify-content-between mb-4">
-        <h2>Gestión de Servicios</h2>
-        <Button variant="primary" onClick={() => {
-          setCurrentService({ status: 'pendiente' });
-          setShowModal(true);
-        }}>
+      <div className="d-flex justify-content-between mb-4 align-items-center flex-wrap gap-2">
+        <h2 className="m-0">Gestión de Servicios</h2>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setCurrentService({ status: 'pendiente' });
+            setShowModal(true);
+          }}
+          className="service-action-btn"
+        >
           Crear Servicio
         </Button>
       </div>
@@ -210,10 +237,13 @@ const ServicesManagement = () => {
             <th>Acciones</th>
           </tr>
         </thead>
+
         <tbody>
           {paginatedServices.length === 0 ? (
             <tr>
-              <td colSpan="9" className="text-center">No se encontraron servicios.</td>
+              <td colSpan="9" className="text-center">
+                No se encontraron servicios.
+              </td>
             </tr>
           ) : (
             paginatedServices.map(service => (
@@ -226,16 +256,29 @@ const ServicesManagement = () => {
                 <td>{service.tecnico?.name || 'No asignado'}</td>
                 <td>{getStatusBadge(service.estado)}</td>
                 <td>{service.fecha_solicitud}</td>
+
                 <td>
                   <div className="services-actions">
-                    <Button variant="info" size="sm" onClick={() => handleEdit(service)}>
-                      <FaEdit style={{ marginRight: 4 }} /> Editar
+                    <Button
+                      variant="info"
+                      size="sm"
+                      className="service-action-btn"
+                      onClick={() => handleEdit(service)}
+                    >
+                      <FaEdit className="me-1" /> Editar
                     </Button>
-                    <Dropdown>
-                      <Dropdown.Toggle variant="outline-primary" size="sm" id={`dropdown-status-${service.id}`}>
-                        <FaExchangeAlt style={{ marginRight: 4 }} />
+
+                    <Dropdown align="end">
+                      <Dropdown.Toggle
+                        variant="outline-primary"
+                        size="sm"
+                        className="service-action-btn service-dropdown-toggle"
+                        id={`dropdown-status-${service.id}`}
+                      >
+                        <FaExchangeAlt className="me-1" />
                         Cambiar estado
                       </Dropdown.Toggle>
+
                       <Dropdown.Menu>
                         <Dropdown.Item
                           active={service.estado === 'pendiente'}
@@ -270,50 +313,65 @@ const ServicesManagement = () => {
           )}
         </tbody>
       </Table>
-      
-      {/* Controles de paginación */}
-      <div className="pagination-controls d-flex justify-content-center align-items-center my-3">
+
+      <div className="pagination-controls d-flex justify-content-between align-items-center my-3">
         <Button
           variant="secondary"
           size="sm"
           disabled={currentPage === 1}
           onClick={() => setCurrentPage(currentPage - 1)}
-          className="me-2"
         >
           Anterior
         </Button>
-        <span>Página {currentPage} de {totalPages}</span>
+
+        <span className="pagination-text">
+          Página {currentPage} de {totalPages}
+        </span>
+
         <Button
           variant="secondary"
           size="sm"
           disabled={currentPage === totalPages || totalPages === 0}
           onClick={() => setCurrentPage(currentPage + 1)}
-          className="ms-2"
         >
           Siguiente
         </Button>
       </div>
-      {/* Modal para crear/editar servicio */}
-      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>{currentService?.id ? 'Editar Servicio' : 'Crear Servicio'}</Modal.Title>
+
+      <Modal
+        show={showModal}
+        onHide={() => setShowModal(false)}
+        size="lg"
+        centered
+        dialogClassName="ee-modal"
+        contentClassName="ee-modal-content"
+      >
+        <Modal.Header closeButton className="ee-modal-header">
+          <Modal.Title className="ee-modal-title">
+            {currentService?.id ? 'Editar Servicio' : 'Crear Servicio'}
+          </Modal.Title>
         </Modal.Header>
+
         <Form onSubmit={handleSubmit}>
-          <Modal.Body>
+          {/* ✅ FORZADO DEL SCROLL (esto es lo que lo arregla sí o sí) */}
+          <Modal.Body
+            className="ee-modal-body"
+            style={{ maxHeight: '70vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+          >
+            {/* ... TU FORM COMPLETO (igual que lo tienes) ... */}
             <Form.Group className="mb-3">
               <Form.Label>Tipo de Equipo</Form.Label>
-              <Form.Control
-                as="select"
+              <Form.Select
                 value={currentService?.tipo_equipo || ''}
-                onChange={(e) => setCurrentService({ ...currentService, tipo_equipo: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, tipo_equipo: e.target.value })
+                }
                 required
               >
-                <option value="" disabled hidden>
-                  Seleccione tipo de equipo
-                </option>
+                <option value="" disabled hidden>Seleccione tipo de equipo</option>
                 <option value="lavadora">Lavadora</option>
                 <option value="nevera">Nevera</option>
-              </Form.Control>
+              </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -321,7 +379,9 @@ const ServicesManagement = () => {
               <Form.Control
                 type="text"
                 value={currentService?.marca || ''}
-                onChange={(e) => setCurrentService({ ...currentService, marca: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, marca: e.target.value })
+                }
                 required
               />
             </Form.Group>
@@ -331,7 +391,9 @@ const ServicesManagement = () => {
               <Form.Control
                 type="text"
                 value={currentService?.modelo || ''}
-                onChange={(e) => setCurrentService({ ...currentService, modelo: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, modelo: e.target.value })
+                }
                 required
               />
             </Form.Group>
@@ -342,7 +404,9 @@ const ServicesManagement = () => {
                 as="textarea"
                 rows={3}
                 value={currentService?.description || ''}
-                onChange={(e) => setCurrentService({ ...currentService, description: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, description: e.target.value })
+                }
                 required
               />
             </Form.Group>
@@ -351,7 +415,9 @@ const ServicesManagement = () => {
               <Form.Label>Estado</Form.Label>
               <Form.Select
                 value={currentService?.status || 'pendiente'}
-                onChange={(e) => setCurrentService({ ...currentService, status: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, status: e.target.value })
+                }
                 required
               >
                 <option value="pendiente">Pendiente</option>
@@ -365,17 +431,22 @@ const ServicesManagement = () => {
               <Form.Label>Asignar Técnico</Form.Label>
               <Form.Select
                 value={currentService?.technicianId || ''}
-                onChange={(e) => setCurrentService({ ...currentService, technicianId: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, technicianId: e.target.value })
+                }
               >
                 <option value="">No asignado</option>
                 {technicians.map(tech => (
                   <option key={tech.id} value={tech.id}>{tech.name}</option>
                 ))}
               </Form.Select>
-              <Form.Label>Asignar un cliente</Form.Label>
+
+              <Form.Label className="mt-2">Asignar un cliente</Form.Label>
               <Form.Select
                 value={currentService?.cientid || ''}
-                onChange={(e) => setCurrentService({ ...currentService, cientid: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, cientid: e.target.value })
+                }
               >
                 <option value="">Seleccione un cliente</option>
                 {cient.filter(client => client?.id).map(client => (
@@ -390,7 +461,9 @@ const ServicesManagement = () => {
                 as="textarea"
                 rows={2}
                 value={currentService?.diagnostico || ''}
-                onChange={(e) => setCurrentService({ ...currentService, diagnostico: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, diagnostico: e.target.value })
+                }
               />
             </Form.Group>
 
@@ -400,7 +473,9 @@ const ServicesManagement = () => {
                 as="textarea"
                 rows={2}
                 value={currentService?.solucion || ''}
-                onChange={(e) => setCurrentService({ ...currentService, solucion: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, solucion: e.target.value })
+                }
               />
             </Form.Group>
 
@@ -411,7 +486,9 @@ const ServicesManagement = () => {
                 min="0"
                 step="0.01"
                 value={currentService?.costo || ''}
-                onChange={(e) => setCurrentService({ ...currentService, costo: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, costo: e.target.value })
+                }
               />
             </Form.Group>
 
@@ -420,7 +497,9 @@ const ServicesManagement = () => {
               <Form.Control
                 type="date"
                 value={currentService?.fecha_solicitud || ''}
-                onChange={(e) => setCurrentService({ ...currentService, fecha_solicitud: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, fecha_solicitud: e.target.value })
+                }
               />
             </Form.Group>
 
@@ -429,7 +508,9 @@ const ServicesManagement = () => {
               <Form.Control
                 type="date"
                 value={currentService?.fecha_atendido || ''}
-                onChange={(e) => setCurrentService({ ...currentService, fecha_atendido: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, fecha_atendido: e.target.value })
+                }
               />
             </Form.Group>
 
@@ -438,14 +519,20 @@ const ServicesManagement = () => {
               <Form.Control
                 type="date"
                 value={currentService?.fecha_completado || ''}
-                onChange={(e) => setCurrentService({ ...currentService, fecha_completado: e.target.value })}
+                onChange={(e) =>
+                  setCurrentService({ ...currentService, fecha_completado: e.target.value })
+                }
               />
             </Form.Group>
-
           </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
-            <Button variant="primary" type="submit">{currentService?.id ? 'Actualizar' : 'Crear'}</Button>
+
+          <Modal.Footer className="ee-modal-footer">
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" type="submit">
+              {currentService?.id ? 'Actualizar' : 'Crear'}
+            </Button>
           </Modal.Footer>
         </Form>
       </Modal>

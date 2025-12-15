@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
-import { faMapMarkerAlt, faTasks, faFileAlt, faUser, faPhone, faEnvelope, faHome, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faUser } from '@fortawesome/free-solid-svg-icons';
 import '../../assets/admin.css';
 import { api } from '../../services/api';
-import { BiGroup, BiWrench, BiReceipt, BiBarChartAlt2 } from "react-icons/bi";
+import { BiGroup, BiWrench } from "react-icons/bi";
 import logoImg from '../../assets/img/Logo.png';
-
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const userData = JSON.parse(localStorage.getItem('userData'));
   const [loading, setLoading] = useState(true);
+
   const [profile, setProfile] = useState({
+    id: null,
     name: '',
     email: '',
     phone: '',
@@ -24,18 +24,15 @@ const AdminDashboard = () => {
     password: '',
     password_confirmation: ''
   });
-  const [errors, setErrors,] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Cargar datos guardados en localStorage si existen
+  // Cargar perfil
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await api.get('/me');
         setProfile(prev => ({
           ...prev,
-          id: res.data.id, // Guarda el id aquí
+          id: res.data.id,
           name: res.data.name || '',
           email: res.data.email || '',
           phone: res.data.phone || '',
@@ -55,51 +52,27 @@ const AdminDashboard = () => {
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  const checkAuthError = (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 419)) {
-      handleLogout();
-      return true;
-    }
-    return false;
-  };
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await api.get('/me');
-        setProfile(prev => ({
-          ...prev,
-          id: res.data.id, // Guarda el id aquí
-          name: res.data.name || '',
-          email: res.data.email || '',
-          phone: res.data.phone || '',
-          address: res.data.address || ''
-        }));
-      } catch (error) {
-        console.error('Error al cargar el perfil:', error);
-      }
-    };
-    fetchProfile();
-  }, []);
   const actualizarPerfil = async (e) => {
     e.preventDefault();
+
     if (!profile.id) {
       alert('No se encontró información del usuario. Por favor, vuelve a iniciar sesión.');
       return;
     }
-    // Construye el objeto solo con los campos necesarios
+
     const data = {
       name: profile.name,
       email: profile.email,
       phone: profile.phone,
       address: profile.address
     };
-    // Solo agrega los campos de contraseña si el usuario los llenó
+
     if (profile.password) {
       data.password = profile.password;
       data.password_confirmation = profile.password_confirmation;
       data.current_password = profile.current_password;
     }
+
     try {
       await api.put(`/users/${profile.id}`, data);
       alert('Perfil actualizado correctamente');
@@ -111,8 +84,7 @@ const AdminDashboard = () => {
         password_confirmation: ''
       }));
     } catch (error) {
-      // Muestra los errores del backend si existen
-      if (error.response && error.response.data && error.response.data.errors) {
+      if (error.response?.data?.errors) {
         const errores = error.response.data.errors;
         alert(Object.values(errores).flat().join('\n'));
       } else {
@@ -133,9 +105,11 @@ const AdminDashboard = () => {
       navigate('/login-register', { replace: true });
     }
   };
+
   const handleElectroMovilClick = () => {
     navigate('/admin');
   };
+
   const isBaseRoute = location.pathname === '/admin' || location.pathname === '/admin/';
 
   const dashboardOptions = [
@@ -151,19 +125,8 @@ const AdminDashboard = () => {
       title: 'Gestión de Servicios',
       description: 'Gestiona los servicios ofrecidos por la empresa.'
     },
-    //{
-    // path: 'invoices',
-    //icon: <BiReceipt />,
-    //title: 'Gestión de Facturas',
-    //description: 'Administra las facturas y transacciones de los clientes.'
-    //},
-    //{
-    //path: 'reports',
-    //icon: <BiBarChartAlt2 />,
-    //title: 'Reportes',
-    //description: 'Genera reportes y estadísticas del sistema.'
-    //}
   ];
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -172,21 +135,34 @@ const AdminDashboard = () => {
       </div>
     );
   }
+
   return (
     <div className="usuario-container">
       <header className="compact-header">
-        <h1 className="admin-logo" onClick={handleElectroMovilClick} style={{ cursor: 'pointer' }}>
+        <h1
+          className="admin-logo"
+          onClick={handleElectroMovilClick}
+          style={{ cursor: 'pointer' }}
+        >
           <img src={logoImg} alt="Logo ElectroElite" className="logo-img" />
           <span className="logo-text">ElectroElite</span>
         </h1>
+
         <div className="header-controls">
           <div className="controls-spacer"></div>
+
           <button
             className="profile-btn"
-            onClick={() => setShowProfileModal(true)}>
+            onClick={() => setShowProfileModal(true)}
+            aria-label="Abrir perfil"
+            type="button"
+          >
             <FontAwesomeIcon icon={faUser} />
           </button>
-          <button className="logout-btn" onClick={handleLogout}>Salir</button>
+
+          <button className="logout-btn" onClick={handleLogout} type="button">
+            Salir
+          </button>
         </div>
       </header>
 
@@ -195,6 +171,7 @@ const AdminDashboard = () => {
           <div className="row dashboard-container">
             <h2 className="dashboard-title">Panel de Administración</h2>
             <p className="dashboard-subtitle">Selecciona una opción para gestionar</p>
+
             <div className="dashboard-options">
               {dashboardOptions.map(option => (
                 <Link to={option.path} key={option.path} className="dashboard-card">
@@ -209,15 +186,15 @@ const AdminDashboard = () => {
           </div>
         ) : (
           <div className="admin-content">
-            <div className="content-container" style={{ width: "100%", maxWidth: "100%", padding: 0, boxShadow: "none", background: "transparent" }}>
+            <div
+              className="content-container"
+              style={{ width: "100%", maxWidth: "100%", padding: 0, boxShadow: "none", background: "transparent" }}
+            >
               <Outlet />
             </div>
           </div>
         )}
       </div>
-
-      {/* MODAL PERFIL */}
-
 
       {/* Modal de perfil */}
       {showProfileModal && (
@@ -225,8 +202,9 @@ const AdminDashboard = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h3>Perfil del Administrador</h3>
-              <button onClick={() => setShowProfileModal(false)}>×</button>
+              <button onClick={() => setShowProfileModal(false)} type="button" aria-label="Cerrar modal">×</button>
             </div>
+
             <form className="profile-form" onSubmit={actualizarPerfil}>
               <div className="form-group">
                 <label>Nombre completo</label>
@@ -307,7 +285,11 @@ const AdminDashboard = () => {
               </div>
 
               <div className="form-actions">
-                <button type="button" className="cancel-btn" onClick={() => setShowProfileModal(false)}>
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => setShowProfileModal(false)}
+                >
                   Cancelar
                 </button>
                 <button type="submit" className="save-btn">
@@ -322,10 +304,12 @@ const AdminDashboard = () => {
       <footer className="app-footer">
         <div className="footer-content">
           <p>&copy; {new Date().getFullYear()} ElectroElite. Todos los derechos reservados.</p>
+
           <div className="footer-links">
-            <a href="#">Términos y condiciones</a>
-            <a href="#">Política de privacidad</a>
-            <a href="#">Contacto</a>
+            {/* ✅ Reemplazo de <a href="#"> para eliminar warning jsx-a11y/anchor-is-valid */}
+            <button type="button" className="footer-link">Términos y condiciones</button>
+            <button type="button" className="footer-link">Política de privacidad</button>
+            <button type="button" className="footer-link">Contacto</button>
           </div>
         </div>
       </footer>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
 import { Modal, Button } from 'react-bootstrap';
+import '../../assets/admin.css';
 
 const UsersManagement = () => {
   const [users, setUsers] = useState([]);
@@ -11,6 +12,7 @@ const UsersManagement = () => {
     phone: '',
     address: ''
   });
+
   const [addUserData, setAddUserData] = useState({
     name: '',
     email: '',
@@ -29,8 +31,7 @@ const UsersManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10; //cantidad de usuarios por página
-
+  const pageSize = 10;
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -60,7 +61,7 @@ const UsersManagement = () => {
     validateAddField(name, value);
   };
 
-  {/*validación de campos*/ }
+  // Validación de campos (editar)
   const validateEditField = (name, value) => {
     let error = '';
 
@@ -96,11 +97,11 @@ const UsersManagement = () => {
 
     setEditErrors(prev => ({ ...prev, [name]: error }));
   };
+
   const validateEditForm = () => {
     const errors = {};
 
     for (const [name, value] of Object.entries(formData)) {
-      validateEditField(name, value);
       let error = '';
 
       switch (name) {
@@ -130,10 +131,10 @@ const UsersManagement = () => {
     }
 
     setEditErrors(errors);
-
     return Object.keys(errors).length === 0;
   };
 
+  // Validación de campos (crear)
   const validateAddField = (name, value) => {
     let error = '';
     switch (name) {
@@ -175,7 +176,6 @@ const UsersManagement = () => {
           error = 'La dirección debe tener al menos 5 caracteres';
         }
         break;
-
       default:
         break;
     }
@@ -262,6 +262,7 @@ const UsersManagement = () => {
     setAddErrors(newErrors);
     return isValid;
   };
+
   const handleCloseAddModal = () => {
     setShowAddModal(false);
     setAddUserData({
@@ -277,11 +278,10 @@ const UsersManagement = () => {
   };
 
   const handleAddUser = async () => {
-    if (!validateAddForm()) {
-      return; // No enviamos formulario si hay errores
-    }
+    if (!validateAddForm()) return;
+
     try {
-      await api.post('/register', addUserData); // Ajusta según tu backend
+      await api.post('/register', addUserData);
       fetchUsers();
       setAddUserData({ name: '', email: '', password: '', password_confirmation: '' });
       setShowAddModal(false);
@@ -302,19 +302,18 @@ const UsersManagement = () => {
 
   const handleEdit = (user) => {
     setEditingUser(user);
-    setFormData(user); // Cargar los datos del usuario en el formulario
-    setShowEditModal(true); // Mostrar el modal
+    setFormData(user);
+    setShowEditModal(true);
   };
 
   const handleUpdate = async () => {
-    if (!validateEditForm()) {
-      return;
-    }
+    if (!validateEditForm()) return;
+
     try {
       await api.put(`/users/${editingUser.id}`, formData);
       fetchUsers();
-      setShowEditModal(false); // Cerrar el modal
-      setFormData({ name: '', email: '', role: 'cliente', phone: '', address: '' }); // Resetear el formulario
+      setShowEditModal(false);
+      setFormData({ name: '', email: '', role: 'cliente', phone: '', address: '' });
     } catch (error) {
       console.error('Error al editar usuario:', error);
     }
@@ -325,6 +324,7 @@ const UsersManagement = () => {
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
   if (loading) {
     return (
       <div className="custom-spinner-container">
@@ -333,34 +333,39 @@ const UsersManagement = () => {
       </div>
     );
   }
+
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
+
   return (
-    <div className="card p-4">
-      <h2>Gestión de Usuarios</h2>
+    <div className="p-4">
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h2 className="m-0">Gestión de Usuarios</h2>
+        <Button
+          variant="primary"
+          onClick={() => setShowAddModal(true)}
+          className="service-action-btn"
+        >
+          Añadir Usuario
+        </Button>
+      </div>
 
       <div className="mb-3">
         <input
           type="text"
-          className={`form-control ${addErrors.name ? 'is-invalid' : ''}`}
+          className="form-control"
           placeholder="Buscar por nombre, correo o rol"
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
         />
       </div>
 
-      <div className="mb-3">
-        <Button variant="primary" onClick={() => setShowAddModal(true)}>
-          Añadir Usuario
-        </Button>
-      </div>
-
       <div className="table-responsive">
         <table className="table table-bordered table-hover">
-          <thead className="table-dark">
+          <thead className="table">
             <tr>
               <th>#</th>
               <th>Nombre</th>
@@ -386,9 +391,21 @@ const UsersManagement = () => {
                   <td>{user.phone || '-'}</td>
                   <td>{user.address || '-'}</td>
                   <td>
-                    <div className="d-flex flex-column gap-1">
-                      <button className="btn btn-sm btn-info" onClick={() => handleEdit(user)}>Editar</button>
-                      <button className="btn btn-sm btn-danger" onClick={() => handleDelete(user.id)}>Eliminar</button>
+                    <div className="users-actions">
+                      <button
+                        className="btn btn-sm btn-info service-action-btn user-action-btn"
+                        type="button"
+                        onClick={() => handleEdit(user)}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger service-action-btn user-action-btn"
+                        type="button"
+                        onClick={() => handleDelete(user.id)}
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -397,36 +414,49 @@ const UsersManagement = () => {
           </tbody>
         </table>
       </div>
-      
-      {/* Paginación */}
-      <div className="pagination-controls d-flex justify-content-center align-items-center my-3">
+
+      {/* ✅ PAGINACIÓN igual a Servicios: izquierda / centro / derecha */}
+      <div className="pagination-controls d-flex justify-content-between align-items-center my-3">
         <Button
           variant="secondary"
           size="sm"
           disabled={currentPage === 1}
           onClick={() => setCurrentPage(currentPage - 1)}
-          className="me-2"
         >
           Anterior
         </Button>
-        <span>Página {currentPage} de {totalPages}</span>
+
+        <span className="pagination-text">
+          Página {currentPage} de {totalPages}
+        </span>
+
         <Button
           variant="secondary"
           size="sm"
           disabled={currentPage === totalPages || totalPages === 0}
           onClick={() => setCurrentPage(currentPage + 1)}
-          className="ms-2"
         >
           Siguiente
         </Button>
       </div>
 
-      {/* Modal para añadir usuario */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Crear Nuevo Usuario</Modal.Title>
+      {/* ✅ Modal para añadir usuario (mismo estilo que Servicios/Perfil) */}
+      <Modal
+        show={showAddModal}
+        onHide={handleCloseAddModal}
+        size="lg"
+        centered
+        dialogClassName="ee-modal"
+        contentClassName="ee-modal-content"
+      >
+        <Modal.Header closeButton className="ee-modal-header">
+          <Modal.Title className="ee-modal-title">Crear Nuevo Usuario</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+
+        <Modal.Body
+          className="ee-modal-body"
+          style={{ maxHeight: '70vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        >
           <div className="mb-3">
             <input
               name="name"
@@ -437,6 +467,7 @@ const UsersManagement = () => {
             />
             {addErrors.name && <div className="invalid-feedback">{addErrors.name}</div>}
           </div>
+
           <div className="mb-3">
             <input
               name="email"
@@ -447,6 +478,7 @@ const UsersManagement = () => {
             />
             {addErrors.email && <div className="invalid-feedback">{addErrors.email}</div>}
           </div>
+
           <div className="mb-3">
             <select
               name="role"
@@ -461,11 +493,12 @@ const UsersManagement = () => {
             </select>
             {addErrors.role && <div className="invalid-feedback">{addErrors.role}</div>}
           </div>
+
           <div className="mb-3">
             <input
               name="phone"
               type="text"
-              autoComplete='off'
+              autoComplete="off"
               className={`form-control ${addErrors.phone ? 'is-invalid' : ''}`}
               placeholder="Celular"
               value={addUserData.phone}
@@ -473,10 +506,11 @@ const UsersManagement = () => {
             />
             {addErrors.phone && <div className="invalid-feedback">{addErrors.phone}</div>}
           </div>
+
           <div className="mb-3">
             <input
               name="address"
-              autoComplete='off'
+              autoComplete="off"
               className={`form-control ${addErrors.address ? 'is-invalid' : ''}`}
               placeholder="Dirección"
               value={addUserData.address}
@@ -484,6 +518,7 @@ const UsersManagement = () => {
             />
             {addErrors.address && <div className="invalid-feedback">{addErrors.address}</div>}
           </div>
+
           <div className="mb-3">
             <input
               name="password"
@@ -493,20 +528,25 @@ const UsersManagement = () => {
               value={addUserData.password}
               onChange={handleAddChange}
             />
+            {addErrors.password && <div className="invalid-feedback">{addErrors.password}</div>}
           </div>
-          {addErrors.password && <div className="invalid-feedback">{addErrors.password}</div>}
+
           <div className="mb-3">
             <input
               name="password_confirmation"
+              type="password"
               className={`form-control ${addErrors.password_confirmation ? 'is-invalid' : ''}`}
               placeholder="Confirmar Contraseña"
               value={addUserData.password_confirmation}
               onChange={handleAddChange}
             />
-            {addErrors.password_confirmation && <div className="invalid-feedback">{addErrors.password_confirmation}</div>}
+            {addErrors.password_confirmation && (
+              <div className="invalid-feedback">{addErrors.password_confirmation}</div>
+            )}
           </div>
         </Modal.Body>
-        <Modal.Footer>
+
+        <Modal.Footer className="ee-modal-footer">
           <Button variant="secondary" onClick={handleCloseAddModal}>
             Cerrar
           </Button>
@@ -516,22 +556,36 @@ const UsersManagement = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Modal para editar usuario */}
-      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Editar Usuario</Modal.Title>
+      {/* ✅ Modal para editar usuario (mismo estilo que Servicios/Perfil) */}
+      <Modal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        size="lg"
+        centered
+        dialogClassName="ee-modal"
+        contentClassName="ee-modal-content"
+      >
+        <Modal.Header closeButton className="ee-modal-header">
+          <Modal.Title className="ee-modal-title">Editar Usuario</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+
+        <Modal.Body
+          className="ee-modal-body"
+          style={{ maxHeight: '70vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        >
           {['name', 'email', 'role', 'phone', 'address'].map(field => (
             <div key={field} className="mb-3">
               {field !== 'role' ? (
                 <>
-                  <label>{{
-                    name: 'Nombre completo',
-                    email: 'Correo electrónico',
-                    phone: 'Teléfono',
-                    address: 'Dirección'
-                  }[field]}</label>
+                  <label className="form-label">
+                    {{
+                      name: 'Nombre completo',
+                      email: 'Correo electrónico',
+                      phone: 'Teléfono',
+                      address: 'Dirección'
+                    }[field]}
+                  </label>
+
                   <input
                     name={field}
                     type={{
@@ -547,18 +601,18 @@ const UsersManagement = () => {
                       phone: 'Ingrese el teléfono',
                       address: 'Ingrese la dirección'
                     }[field]}
-                    value={formData[field]}
+                    value={formData[field] || ''}
                     onChange={handleChange}
                   />
                   {editErrors[field] && <div className="invalid-feedback">{editErrors[field]}</div>}
                 </>
               ) : (
                 <>
-                  <label>Rol</label>
+                  <label className="form-label">Rol</label>
                   <select
                     name="role"
                     className={`form-select ${editErrors.role ? 'is-invalid' : ''}`}
-                    value={formData.role}
+                    value={formData.role || ''}
                     onChange={handleChange}
                   >
                     <option value="">Seleccione un rol</option>
@@ -572,7 +626,8 @@ const UsersManagement = () => {
             </div>
           ))}
         </Modal.Body>
-        <Modal.Footer>
+
+        <Modal.Footer className="ee-modal-footer">
           <Button variant="secondary" onClick={() => setShowEditModal(false)}>
             Cerrar
           </Button>
