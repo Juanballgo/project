@@ -4,6 +4,7 @@ import '../assets/LoginRegister.css';
 import 'boxicons/css/boxicons.min.css';
 import api from '../services/api';
 
+
 const LoginRegister = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
 
@@ -31,17 +32,16 @@ const LoginRegister = ({ onLoginSuccess }) => {
       container?.classList.add('active');
     }
 
-    const onRegister = () => container?.classList.add('active');
-    const onLogin = () => container?.classList.remove('active');
-
-    registerBtn?.addEventListener('click', onRegister);
-    loginBtn?.addEventListener('click', onLogin);
+    registerBtn?.addEventListener('click', () => container?.classList.add('active'));
+    loginBtn?.addEventListener('click', () => container?.classList.remove('active'));
 
     return () => {
-      registerBtn?.removeEventListener('click', onRegister);
-      loginBtn?.removeEventListener('click', onLogin);
+      registerBtn?.removeEventListener('click', () => { });
+      loginBtn?.removeEventListener('click', () => { });
     };
   }, []);
+
+
 
   const validateField = (name, value) => {
     let error = '';
@@ -74,12 +74,14 @@ const LoginRegister = ({ onLoginSuccess }) => {
     setErrors(prev => ({ ...prev, [name]: error }));
   };
 
+
   // formulario de olvido de contraseña
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
     setForgotSuccess('');
     setForgotError('');
     try {
+      // Aquí deberías llamar a tu endpoint real de recuperación
       await api.forgotPassword({ email: forgotEmail });
       setForgotSuccess('¡Te hemos enviado un correo para restablecer tu contraseña!');
       setForgotEmail('');
@@ -127,29 +129,20 @@ const LoginRegister = ({ onLoginSuccess }) => {
         password: registerData.password
       });
 
-      const token = loginResponse?.data?.token || loginResponse?.data?.access_token;
+      const token = loginResponse.data.token || loginResponse.data.access_token;
       if (token) localStorage.setItem('auth_token', token);
 
-      const meResp = await api.getCurrentUser();
-      const user = meResp?.data;
-
+      const user = (await api.getCurrentUser()).data;
       setRegistrationSuccess(true);
 
       setTimeout(() => {
-        // fallback duro por si el router en hosting falla
         navigate('/usuario');
-        setTimeout(() => {
-          if (window.location.pathname !== '/usuario') {
-            window.location.assign('/usuario');
-          }
-        }, 200);
-
         onLoginSuccess?.(user);
-      }, 900);
+      }, 2000);
     } catch (error) {
       console.error('Error en registro:', error);
-      setErrors(error?.response?.data?.errors || {
-        general: error?.response?.data?.message || 'Error en el registro'
+      setErrors(error.response?.data?.errors || {
+        general: error.response?.data?.message || 'Error en el registro'
       });
     } finally {
       setIsLoading(false);
@@ -168,91 +161,74 @@ const LoginRegister = ({ onLoginSuccess }) => {
 
     try {
       const response = await api.login(loginData);
-
-      const token = response?.data?.token || response?.data?.access_token;
+      const token = response.data.token || response.data.access_token;
       if (token) localStorage.setItem('auth_token', token);
 
-      const meResp = await api.getCurrentUser();
-      const user = meResp?.data;
-
-      if (!user) {
-        setErrors({ general: 'Login OK, pero /me no devolvió usuario. Revisa backend.' });
-        setIsLoading(false);
-        return;
-      }
-
-      // Normaliza role (por si viene en mayúsculas o con espacios)
-      const role = String(user.role || '').trim().toLowerCase();
+      const user = (await api.getCurrentUser()).data;
 
       const redirectPath = {
-        admin: '/admin',
-        tecnico: '/tecnico',
-        cliente: '/usuario'
-      }[role] || '/usuario';
+        'admin': '/admin',
+        'tecnico': '/tecnico',
+        'cliente': '/usuario'
+      }[user.role] || '/usuario';
 
-      // Intento 1: React Router
-      const before = window.location.pathname;
       navigate(redirectPath);
-
-      // Fallback: si el hosting no resuelve rutas SPA, fuerza navegación
-      setTimeout(() => {
-        // si no cambió, forzamos
-        if (window.location.pathname === before) {
-          window.location.assign(redirectPath);
-        }
-      }, 200);
-
       onLoginSuccess?.(user);
     } catch (error) {
-<<<<<<< Updated upstream
-      setErrors({ general: error.response?.data?.message || 'Error al iniciar sesión' });
-=======
       console.error('Error en login:', error);
-
+      // Determine a friendly message based on server response or network error
       let friendly = 'Error al iniciar sesión';
+      // reset field-specific errors
       let fieldErrors = {};
 
-      // Si tu api.js está rechazando con `error.response?.data`, aquí puede venir “plano”
-      const status = error?.status || error?.response?.status;
-      const data = error?.response?.data || error;
-      const serverMsg = String(data?.message || '').toLowerCase();
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data || {};
+        const serverMsg = (data.message || '').toString().toLowerCase();
 
-      if (status >= 500 || serverMsg.includes('connection') || serverMsg.includes('conex') || serverMsg.includes('database') || serverMsg.includes('db')) {
-        friendly = 'Error de conexión';
-      } else if (status === 401) {
-        if (serverMsg.includes('password') || serverMsg.includes('contrase') || serverMsg.includes('invalid credentials') || serverMsg.includes('credenciales')) {
-          friendly = 'Contraseña incorrecta';
-          fieldErrors.password = 'Contraseña incorrecta';
-        } else if (serverMsg.includes('user') || serverMsg.includes('email') || serverMsg.includes('no encontrado') || serverMsg.includes('not found')) {
-          friendly = 'Email no registrado';
-          fieldErrors.email = 'Email no registrado';
-        } else {
-          friendly = data?.message || 'Credenciales inválidas';
-        }
-      } else if (data?.errors) {
-        if (data.errors.password) {
-          fieldErrors.password = Array.isArray(data.errors.password) ? data.errors.password.join(' ') : data.errors.password;
-          friendly = fieldErrors.password;
-        } else if (data.errors.email) {
-          fieldErrors.email = Array.isArray(data.errors.email) ? data.errors.email.join(' ') : data.errors.email;
-          friendly = fieldErrors.email;
-        } else if (data.message) {
-          friendly = data.message;
-        }
-      } else if (data?.message) {
-        if (serverMsg.includes('connection') || serverMsg.includes('conex')) {
+        // Server-side 5xx or messages mentioning connection/database -> connection error
+        if (status >= 500 || serverMsg.includes('connection') || serverMsg.includes('conex') || serverMsg.includes('database') || serverMsg.includes('db')) {
           friendly = 'Error de conexión';
-        } else {
-          friendly = data.message;
         }
-      } else if (error?.request) {
+        // Unauthorized - try to distinguish between email not found and wrong password
+        else if (status === 401) {
+          if (serverMsg.includes('password') || serverMsg.includes('contrase') || serverMsg.includes('invalid credentials') || serverMsg.includes('credenciales')) {
+            friendly = 'Contraseña incorrecta';
+            fieldErrors.password = 'Contraseña incorrecta';
+          } else if (serverMsg.includes('user') || serverMsg.includes('email') || serverMsg.includes('no encontrado') || serverMsg.includes('not found')) {
+            friendly = 'Email no registrado';
+            fieldErrors.email = 'Email no registrado';
+          } else {
+            friendly = data.message || 'Credenciales inválidas';
+          }
+        }
+        // Validation-like responses with errors object
+        else if (data.errors) {
+          if (data.errors.password) {
+            fieldErrors.password = Array.isArray(data.errors.password) ? data.errors.password.join(' ') : data.errors.password;
+            friendly = fieldErrors.password;
+          } else if (data.errors.email) {
+            fieldErrors.email = Array.isArray(data.errors.email) ? data.errors.email.join(' ') : data.errors.email;
+            friendly = fieldErrors.email;
+          } else if (data.message) {
+            friendly = data.message;
+          }
+        } else if (data.message) {
+          // generic server message
+          if (data.message.toString().toLowerCase().includes('connection') || data.message.toString().toLowerCase().includes('conex')) {
+            friendly = 'Error de conexión';
+          } else {
+            friendly = data.message;
+          }
+        }
+      } else if (error.request) {
+        // network error / no response
         friendly = 'Error de conexión';
       } else {
-        friendly = error?.message || friendly;
+        friendly = error.message || friendly;
       }
 
       setErrors({ ...fieldErrors, general: friendly });
->>>>>>> Stashed changes
     } finally {
       setIsLoading(false);
     }
@@ -270,191 +246,169 @@ const LoginRegister = ({ onLoginSuccess }) => {
 
   return (
     <>
-      {showForgotForm && (
-        <div className="forgot-modal-overlay">
-          <div className="forgot-modal">
-            <button
-              className="close-btn"
-              onClick={() => {
-                setShowForgotForm(false);
-                setForgotSuccess('');
-                setForgotError('');
-                setForgotEmail('');
-              }}
-            >
-              &times;
-            </button>
-            <h2>¿Olvidaste tu contraseña?</h2>
-            <p>Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
-            <form onSubmit={handleForgotSubmit}>
-              <input
-                type="email"
-                placeholder="Correo electrónico"
-                value={forgotEmail}
-                onChange={e => setForgotEmail(e.target.value)}
-                required
-                autoFocus
-              />
-              <button type="submit" className="btn" style={{ marginTop: 12 }}>
-                Enviar enlace
-              </button>
-            </form>
-            {forgotSuccess && <div className="success-message">{forgotSuccess}</div>}
-            {forgotError && <div id="error" className="error-message">{forgotError}</div>}
-          </div>
-        </div>
-      )}
-
-      <div className="login-register">
-        <div className="container">
-          <div className="form-box login">
-            <form onSubmit={handleLoginSubmit}>
-              <h1>Login</h1>
-              {errors.general && <div className="error-message">{errors.general}</div>}
-              <div className="input-box">
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  placeholder="Correo electrónico"
-                  required
-                  value={loginData.email}
-                  onChange={handleLoginChange}
-                  autoComplete="off"
-                />
-                <i className="bx bxs-envelope"></i>
-              </div>
-              <div className="input-box">
-                <input
-                  id="password"
-                  type="password"
-                  name="password"
-                  placeholder="Contraseña"
-                  required
-                  value={loginData.password}
-                  onChange={handleLoginChange}
-                />
-                <i className="bx bxs-lock-alt"></i>
-              </div>
-              <button id="btn" type="submit" className="btn" disabled={isLoading}>
-                {isLoading ? 'Procesando...' : 'Iniciar sesión'}
-              </button>
-
-              <div className="forgot-link">
-                <button
-                  type="button"
-                  onClick={() => setShowForgotForm(true)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    margin: 0,
-                    color: 'inherit',
-                    textDecoration: 'underline',
-                    cursor: 'pointer',
-                    font: 'inherit'
-                  }}
-                >
-                  ¿Olvidaste tu contraseña?
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="form-box register">
-            <form onSubmit={handleRegisterSubmit}>
-              <h1>Registro</h1>
-              {errors.general && <div className="error-message">{errors.general}</div>}
-              <div className="input-box">
-                <input
-                  type="text"
-                  name="name"
-                  placeholder="Nombre completo"
-                  required
-                  value={registerData.name}
-                  onChange={handleRegisterChange}
-                  className={errors.name ? 'error-field' : ''}
-                  autoComplete="off"
-                />
-                <i className="bx bxs-user"></i>
-                {errors.name && <span className="input-error">{errors.name}</span>}
-              </div>
-              <div className="input-box">
-                <input
-                  type="email"
-                  name="email"
-                  placeholder="Correo electrónico"
-                  required
-                  value={registerData.email}
-                  onChange={handleRegisterChange}
-                  className={errors.email ? 'error-field' : ''}
-                  autoComplete="off"
-                />
-                <i className="bx bxs-envelope"></i>
-                {errors.email && <span className="input-error">{errors.email}</span>}
-              </div>
-              <div className="input-box">
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Contraseña"
-                  required
-                  value={registerData.password}
-                  onChange={handleRegisterChange}
-                  className={errors.password ? 'error-field' : ''}
-                  autoComplete="off"
-                />
-                <i className="bx bxs-lock-alt"></i>
-                {errors.password && <span className="input-error">{errors.password}</span>}
-              </div>
-              <div className="input-box">
-                <input
-                  type="password"
-                  name="password_confirmation"
-                  placeholder="Confirmar contraseña"
-                  required
-                  value={registerData.password_confirmation}
-                  onChange={handleRegisterChange}
-                  className={errors.password_confirmation ? 'error-field' : ''}
-                  autoComplete="off"
-                />
-                <i className="bx bxs-lock-alt"></i>
-                {errors.password_confirmation && <span className="input-error">{errors.password_confirmation}</span>}
-              </div>
-              <button type="submit" className="btn" disabled={isLoading}>
-                {isLoading ? 'Procesando...' : 'Registrarse'}
-              </button>
-            </form>
-          </div>
-
-          <div className="toggle-box">
-            <div className="toggle-panel toggle-left">
-              <h1>¡Bienvenido!</h1>
-              <p>Inicia sesión con:</p>
-              <div className="social-icons">
-                <a href="https://workspace.google.com/intl/es-419/gmail/"><i className="bx bxl-google"></i></a>
-                <a href="https://www.facebook.com/"><i className="bx bxl-facebook"></i></a>
-                <a href="https://github.com/login"><i className="bx bxl-github"></i></a>
-              </div>
-              <p>¿No tienes una cuenta?</p>
-              <button className="btn register-btn" type="button">Registrarse</button>
-            </div>
-            <div className="toggle-panel toggle-right">
-              <h1>¡Hola de nuevo!</h1>
-              <p>¿Ya tienes una cuenta?</p>
-              <button className="btn login-btn" type="button">Iniciar sesión</button>
-              <p>O regístrate con:</p>
-              <div className="social-icons">
-                <a href="https://workspace.google.com/intl/es-419/gmail/"><i className="bx bxl-google"></i></a>
-                <a href="https://www.facebook.com/"><i className="bx bxl-facebook"></i></a>
-                <a href="https://github.com/login"><i className="bx bxl-github"></i></a>
-              </div>
-            </div>
-          </div>
-
+    {showForgotForm && (
+      <div className="forgot-modal-overlay">
+        <div className="forgot-modal">
+          <button className="close-btn" onClick={() => {
+            setShowForgotForm(false);
+            setForgotSuccess('');
+            setForgotError('');
+            setForgotEmail('');
+          }}>&times;</button>
+          <h2>¿Olvidaste tu contraseña?</h2>
+          <p>Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.</p>
+          <form onSubmit={handleForgotSubmit}>
+            <input
+              type="email"
+              placeholder="Correo electrónico"
+              value={forgotEmail}
+              onChange={e => setForgotEmail(e.target.value)}
+              required
+              autoFocus
+            />
+            <button type="submit" className="btn" style={{ marginTop: 12 }}>Enviar enlace</button>
+          </form>
+          {forgotSuccess && <div className="success-message">{forgotSuccess}</div>}
+          {forgotError && <div id="error" className="error-message">{forgotError}</div>}
         </div>
       </div>
-    </>
+    )}
+
+    <div className="login-register">
+      <div className="container">
+        <div className="form-box login">
+          <form onSubmit={handleLoginSubmit}>
+            <h1>Login</h1>
+            {errors.general && <div className="error-message">{errors.general}</div>}
+            <div className="input-box">
+              <input
+                id="email"
+                type="email"
+                name="email"
+                placeholder="Correo electrónico"
+                required
+                value={loginData.email}
+                onChange={handleLoginChange}
+                autoComplete='off'
+              />
+              <i className='bx bxs-envelope'></i>
+            </div>
+            <div className="input-box">
+              <input
+                id="password"
+                type="password"
+                name="password"
+                placeholder="Contraseña"
+                required
+                value={loginData.password}
+                onChange={handleLoginChange}
+              />
+              <i className='bx bxs-lock-alt'></i>
+            </div>
+            <button  id= "btn" type="submit" className="btn" disabled={isLoading}>
+              {isLoading ? 'Procesando...' : 'Iniciar sesión'}
+            </button>
+            <div className="forgot-link">
+              <a href="#" onClick={e => { e.preventDefault(); setShowForgotForm(true); }}>
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+          </form>
+        </div>
+
+        <div className="form-box register">
+          <form onSubmit={handleRegisterSubmit}>
+            <h1>Registro</h1>
+            {errors.general && <div className="error-message">{errors.general}</div>}
+            <div className="input-box">
+              <input
+                type="text"
+                name="name"
+                placeholder="Nombre completo"
+                required
+                value={registerData.name}
+                onChange={handleRegisterChange}
+                className={errors.name ? 'error-field' : ''}
+                autoComplete='off'
+              />
+              <i className='bx bxs-user'></i>
+              {errors.name && <span className="input-error">{errors.name}</span>}
+            </div>
+            <div className="input-box">
+              <input
+                type="email"
+                name="email"
+                placeholder="Correo electrónico"
+                required
+                value={registerData.email}
+                onChange={handleRegisterChange}
+                className={errors.email ? 'error-field' : ''}
+                autoComplete='off'
+              />
+              <i className='bx bxs-envelope'></i>
+              {errors.email && <span className="input-error">{errors.email}</span>}
+            </div>
+            <div className="input-box">
+              <input
+                type="password"
+                name="password"
+                placeholder="Contraseña"
+                required
+                value={registerData.password}
+                onChange={handleRegisterChange}
+                className={errors.password ? 'error-field' : ''}
+                autoComplete='off'
+              />
+              <i className='bx bxs-lock-alt'></i>
+              {errors.password && <span className="input-error">{errors.password}</span>}
+            </div>
+            <div className="input-box">
+              <input
+                type="password"
+                name="password_confirmation"
+                placeholder="Confirmar contraseña"
+                required
+                value={registerData.password_confirmation}
+                onChange={handleRegisterChange}
+                className={errors.password_confirmation ? 'error-field' : ''}
+                autoComplete='off'
+              />
+              <i className='bx bxs-lock-alt'></i>
+              {errors.password_confirmation && <span className="input-error">{errors.password_confirmation}</span>}
+            </div>
+            <button type="submit" className="btn" disabled={isLoading}>
+              {isLoading ? 'Procesando...' : 'Registrarse'}
+            </button>
+          </form>
+        </div>
+
+        <div className="toggle-box">
+          <div className="toggle-panel toggle-left">
+            <h1>¡Bienvenido!</h1>
+            <p>Inicia sesión con:</p>
+            <div className="social-icons">
+              <a href="https://workspace.google.com/intl/es-419/gmail/"><i className='bx bxl-google'></i></a>
+              <a href="https://www.facebook.com/"><i className='bx bxl-facebook'></i></a>
+              <a href="https://github.com/login"><i className='bx bxl-github'></i></a>
+            </div>
+            <p>¿No tienes una cuenta?</p>
+            <button className="btn register-btn">Registrarse</button>
+          </div>
+          <div className="toggle-panel toggle-right">
+            <h1>¡Hola de nuevo!</h1>
+            <p>¿Ya tienes una cuenta?</p>
+            <button className="btn login-btn">Iniciar sesión</button>
+            <p>O regístrate con:</p>
+            <div className="social-icons">
+              <a href="https://workspace.google.com/intl/es-419/gmail/"><i className='bx bxl-google'></i></a>
+              <a href="https://www.facebook.com/"><i className='bx bxl-facebook'></i></a>
+              <a href="https://github.com/login"><i className='bx bxl-github'></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+     </>
   );
 };
 
