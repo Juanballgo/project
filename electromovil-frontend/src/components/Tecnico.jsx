@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faMapMarkerAlt, faTasks, faFileAlt,
@@ -11,17 +11,10 @@ import { api } from '../services/api';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import logoImg from '../assets/img/Logo.png';
 
-const AVAILABILITY_KEY = 'tecnico_availability';
-
 const Tecnico = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // ✅ usado (evita warning si lo tenías importado)
-
-  // ✅ Persistencia del estado de disponibilidad
-  const [availability, setAvailability] = useState(() => {
-    const saved = localStorage.getItem(AVAILABILITY_KEY);
-    return saved || 'disponible';
-  });
+  // Estado para controlar la disponibilidad
+  const [availability, setAvailability] = useState('disponible');
 
   // Estado para controlar la visibilidad del modal de perfil
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -43,10 +36,6 @@ const Tecnico = () => {
     password_confirmation: ''
   });
 
-  // ✅ Guardar disponibilidad cada vez que cambie
-  useEffect(() => {
-    localStorage.setItem(AVAILABILITY_KEY, availability);
-  }, [availability]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -54,7 +43,7 @@ const Tecnico = () => {
         const res = await api.get('/me');
         setProfile(prev => ({
           ...prev,
-          id: res.data.id,
+          id: res.data.id, // Guarda el id aquí
           name: res.data.name || '',
           email: res.data.email || '',
           phone: res.data.phone || '',
@@ -70,19 +59,15 @@ const Tecnico = () => {
   // Estado para almacenar los datos de los clientes por id
   const [clientes, setClientes] = useState({});
   const [servicios, setServicios] = useState([]);
-
-  // ✅ “usar” clientes para evitar warning no-unused-vars (sin cambiar UI ni lógica)
-  useEffect(() => {
-    void clientes;
-  }, [clientes]);
-
   // Cuando se cargan los servicios, buscar los datos de los clientes
   useEffect(() => {
     const fetchClientes = async () => {
+      // Obtener los cliente_id únicos de los servicios
       const clienteIds = [...new Set(servicios.map(s => s.cliente_id))].filter(Boolean);
       if (clienteIds.length === 0) return;
 
       try {
+        // Puedes optimizar esto según tu API, aquí se hace una petición por cada cliente
         const clientesData = {};
         await Promise.all(clienteIds.map(async (id) => {
           const res = await api.get(`/users/${id}`);
@@ -97,13 +82,12 @@ const Tecnico = () => {
     fetchClientes();
   }, [servicios]);
 
-  // ✅ fetchServiciosAsignados con useCallback para cumplir exhaustive-deps
-  const fetchServiciosAsignados = useCallback(async () => {
+  // Datos de servicios con los nuevos campos solicitados
+  const fetchServiciosAsignados = async () => {
     setLoading(true);
     try {
-      const userData = JSON.parse(localStorage.getItem('userData'));
-      const tecnicoId = userData?.id; // lo conservamos (no lo quitamos)
-      void tecnicoId; // ✅ evita warning por “asignado pero no usado” si te lo marca
+      const userData = JSON.parse(localStorage.getItem('userData')); // obtenemos el id del técnico logueado
+      const tecnicoId = userData?.id; // este id debe ser el que corresponde en la tabla 'users'
 
       const response = await api.get('/mis');
       setServicios(response.data);
@@ -112,22 +96,16 @@ const Tecnico = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  // ✅ useEffect con deps correctas (sin disable)
   useEffect(() => {
     fetchServiciosAsignados();
-  }, [fetchServiciosAsignados]);
+  }, []);
+
 
   // Función para cambiar disponibilidad
-  const cambiarDisponibilidad = (estadoSeleccionado) => {
-    setShowEstados(false);
-
-    if (estadoSeleccionado) {
-      setAvailability(estadoSeleccionado);
-      return;
-    }
-
+  const cambiarDisponibilidad = () => {
+    setShowEstados(false); // Cierra el menú al cambiar la disponibilidad
     if (availability === 'disponible') {
       setAvailability('ocupado');
     } else if (availability === 'ocupado') {
@@ -153,6 +131,7 @@ const Tecnico = () => {
   const cambiarEstadoServicio = async (id, nuevoEstado) => {
     try {
       await api.put(`/servicios/${id}`, { estado: nuevoEstado });
+      // Actualiza el estado local solo si la petición fue exitosa
       setServicios(servicios.map(servicio =>
         servicio.id === id ? { ...servicio, estado: nuevoEstado } : servicio
       ));
@@ -169,12 +148,7 @@ const Tecnico = () => {
     ));
   };
 
-  // ✅ Si estas funciones no se usan en esta vista, igual evitamos warning sin quitarlas
-  void cambiarEstadoServicio;
-  void actualizarServicio;
-
   const [costoValor, setCostoValor] = useState('');
-
   // Función para enviar reporte
   const enviarReporte = async (e) => {
     e.preventDefault();
@@ -183,7 +157,7 @@ const Tecnico = () => {
     const tipoReporte = formData.get('tipo_reporte');
     const detalles = formData.get('detalles');
     const costo = formData.get('costo');
-    void costo; // si te marca warning por “costo no usado”
+
 
     try {
       let nuevoEstado = 'en_proceso';
@@ -210,6 +184,7 @@ const Tecnico = () => {
     }
   };
 
+
   // Función para actualizar perfil
   const actualizarPerfil = async (e) => {
     e.preventDefault();
@@ -226,20 +201,19 @@ const Tecnico = () => {
       alert('No se encontró información del usuario. Por favor, vuelve a iniciar sesión.');
       return;
     }
-
+    // Construye el objeto solo con los campos necesarios
     const data = {
       name: profile.name,
       email: profile.email,
       phone: profile.phone,
       address: profile.address
     };
-
+    // Solo agrega los campos de contraseña si el usuario los llenó
     if (profile.password) {
       data.password = profile.password;
       data.password_confirmation = profile.password_confirmation;
       data.current_password = profile.current_password;
     }
-
     try {
       await api.put(`/users/${profile.id}`, data);
       alert('Perfil actualizado correctamente');
@@ -251,6 +225,7 @@ const Tecnico = () => {
         password_confirmation: ''
       }));
     } catch (error) {
+      // Muestra los errores del backend si existen
       if (error.response && error.response.data && error.response.data.errors) {
         const errores = error.response.data.errors;
         alert(Object.values(errores).flat().join('\n'));
@@ -261,52 +236,45 @@ const Tecnico = () => {
     }
   };
 
-<<<<<<< Updated upstream
-  //validación de campos del perfil
-
+  //validación de campos del perfil - VERSIÓN CORREGIDA
   const validateField = (name, value) => {
     let error = '';
 
-    if (!value.trim()) {
-=======
-  // validación de campos del perfil
-  const validateField = (name, value) => {
-    let error = '';
+    // ✅ SOLUCIÓN: Convertir a string antes de usar .trim()
     const stringValue = String(value || '');
-
+    
     if (!stringValue.trim()) {
->>>>>>> Stashed changes
       return 'Este campo es obligatorio';
     }
 
     switch (name) {
       case 'name':
-        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+        if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(stringValue)) {
           error = 'El nombre solo debe contener letras';
         }
         break;
       case 'email':
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stringValue)) {
           error = 'Correo electrónico no válido';
         }
         break;
       case 'phone':
-        if (!/^\d{7,10}$/.test(value)) {
+        if (!/^\d{7,10}$/.test(stringValue)) {
           error = 'Debe tener entre 7 y 10 dígitos';
         }
         break;
       case 'address':
-        if (value.trim().length < 5) {
+        if (stringValue.trim().length < 5) {
           error = 'La dirección debe tener al menos 5 caracteres';
         }
         break;
       case 'password':
-        if (value && value.length < 8) {
+        if (stringValue && stringValue.length < 8) {
           error = 'La contraseña debe tener al menos 8 caracteres';
         }
         break;
       case 'password_confirmation':
-        if (value !== profile.password) {
+        if (stringValue !== profile.password) {
           error = 'Las contraseñas no coinciden';
         }
         break;
@@ -316,25 +284,16 @@ const Tecnico = () => {
 
     return error;
   };
-
   // Función para manejar cambio en inputs de perfil
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
 
     setProfile(prev => ({ ...prev, [name]: value }));
 
+    // Validación en tiempo real
     const error = validateField(name, value);
     setErrors(prev => ({ ...prev, [name]: error }));
   };
-
-  // ✅ “usar” imports de íconos/router que podrían dar warning si no se usan en JSX
-  void faClock;
-  void faSpinner;
-  void faEnvelope;
-  void faLock;
-  void Outlet;
-  void Link;
-  void location;
 
   if (loading) {
     return (
@@ -344,16 +303,11 @@ const Tecnico = () => {
       </div>
     );
   }
-
   return (
     <div className="technician-container">
       {/* Header compacto */}
       <header className="compact-header">
-        <div
-          className="logo-area"
-          style={{ cursor: 'pointer' }}
-          onClick={() => window.location.reload()}
-        >
+        <div className="logo-area">
           <img src={logoImg} alt="Logo ElectroElite" className="logo-img" />
           <span className="logo-text">ElectroElite</span>
         </div>
@@ -373,7 +327,6 @@ const Tecnico = () => {
                 {availability === 'ocupado' && 'Ocupado'}
                 {availability === 'break' && 'En descanso'}
               </button>
-
               {showEstados && (
                 <div className="availability-menu">
                   <div className="disponible" onClick={() => cambiarDisponibilidad('disponible')}>Disponible</div>
@@ -382,12 +335,12 @@ const Tecnico = () => {
                 </div>
               )}
             </div>
-
-            <button className="profile-btn" onClick={() => setShowProfileModal(true)}>
+            <button
+              className="profile-btn"
+              onClick={() => setShowProfileModal(true)}>
               <FontAwesomeIcon icon={faUser} />
             </button>
           </div>
-
           <button className="logout-btn" onClick={handleLogout}>Salir</button>
         </div>
       </header>
@@ -442,7 +395,7 @@ const Tecnico = () => {
             </div>
           </section>
 
-          {/* Servicios Completados */}
+          {/* Sección nueva: Servicios Completados */}
           <section className="completed-section">
             <div className="section-header" style={{ cursor: 'pointer' }} onClick={() => setMostrarCompletados(prev => !prev)}>
               <FontAwesomeIcon icon={faCheckCircle} />
@@ -491,8 +444,7 @@ const Tecnico = () => {
               )
             )}
           </section>
-
-          {/* Servicios Cancelados */}
+          {/* Sección nueva: Servicios Cancelados */}
           <section className="completed-section">
             <div className="section-header" style={{ cursor: 'pointer' }} onClick={() => setMostrarCancelados(prev => !prev)}>
               <FontAwesomeIcon icon={faTimesCircle} />
@@ -541,7 +493,6 @@ const Tecnico = () => {
             )}
           </section>
         </div>
-
         {/* Sección derecha - Mapa y reportes */}
         <div className="right-side-column">
           {/* Tarjeta de reportes */}
@@ -565,12 +516,7 @@ const Tecnico = () => {
 
               <div className="form-group">
                 <label>Tipo de Reporte</label>
-                <select
-                  name="tipo_reporte"
-                  required
-                  value={tipoReporteSeleccionado}
-                  onChange={e => setTipoReporteSeleccionado(e.target.value)}
-                >
+                <select name="tipo_reporte" required value={tipoReporteSeleccionado} onChange={e => setTipoReporteSeleccionado(e.target.value)}>
                   <option value="Avance de trabajo">Avance de trabajo</option>
                   <option value="Necesidad de repuestos">Necesidad de repuestos</option>
                   <option value="problema encontrado">Problema encontrado</option>
@@ -583,7 +529,6 @@ const Tecnico = () => {
                 <label>Detalles</label>
                 <textarea name="detalles" rows="3" required></textarea>
               </div>
-
               {tipoReporteSeleccionado !== 'cancelado' && (
                 <>
                   <div className="form-group">
@@ -601,9 +546,13 @@ const Tecnico = () => {
                       }}
                     />
                   </div>
+
+                  <div className="form-group">
+                    <label>Subir foto (opcional)</label>
+                    <input type="file" name="foto" accept="image/*" />
+                  </div>
                 </>
               )}
-
               <button type="submit" className="submit-btn">
                 <FontAwesomeIcon icon={faFileAlt} /> Enviar Reporte
               </button>
