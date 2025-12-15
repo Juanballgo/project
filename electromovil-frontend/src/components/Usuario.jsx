@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
-import { FaUser, FaPlus, FaEdit, FaSnowflake, FaTshirt, FaTrash, FaTools, FaCalendarAlt, FaPhone, FaMapMarkerAlt } from 'react-icons/fa';
+import React, { useState, useEffect, useContext, useRef, useCallback, useMemo } from 'react';
+import { FaUser, FaPlus, FaEdit, FaSnowflake, FaTshirt, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import '../assets/Usuario.css';
@@ -16,9 +16,12 @@ const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
 const Usuario = () => {
   const navigate = useNavigate();
+
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
   const [userData, setUserData] = useState({
+    id: '',
     name: '',
     email: '',
     phone: '',
@@ -27,8 +30,10 @@ const Usuario = () => {
     password: '',
     password_confirmation: ''
   });
+
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
+
   const [serviceData, setServiceData] = useState({
     tipo_equipo: 'lavadora',
     marca: '',
@@ -36,10 +41,13 @@ const Usuario = () => {
     descripcion_problema: '',
     fecha_solicitud: new Date().toISOString().split('T')[0]
   });
+
   const [servicios, setServicios] = useState([]);
   const [appliances, setAppliances] = useState([]);
+
   const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
+
   const [newAppliance, setNewAppliance] = useState({
     type: 'nevera',
     brand: '',
@@ -47,50 +55,91 @@ const Usuario = () => {
     purchaseDate: '',
     image: null
   });
+
   const [showApplianceForm, setShowApplianceForm] = useState(false);
-  const [inactivityTimer, setInactivityTimer] = useState(null);
+
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [selectedAppliance, setSelectedAppliance] = useState(null);
   const [serviceDescription, setServiceDescription] = useState('');
+
   const inactivityTimerRef = useRef(null);
   const [originalProfileData, setOriginalProfileData] = useState({});
 
-  const checkAuthError = (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 419)) {
-      handleLogout();
-      return true;
+  // Preview seguro para imagen (evita fugas)
+  const [previewUrl, setPreviewUrl] = useState('');
+  useEffect(() => {
+    if (!newAppliance.image) {
+      setPreviewUrl('');
+      return;
     }
-    return false;
-  };
+    const url = URL.createObjectURL(newAppliance.image);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [newAppliance.image]);
 
-  const [userIsLoggedIn, setUserIsLoggedIn] = useState(() => {
-    // Al cargar el componente, verificamos si hay token (o lo que uses)
-    return Boolean(localStorage.getItem('auth_token'));
-  });
+  const handleLogout = useCallback(async () => {
+    try {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
 
-  const resetInactivityTimer = () => {
+      // Limpia listeners de actividad
+      const events = ['mousemove', 'keydown', 'click', 'scroll'];
+      events.forEach(e => window.removeEventListener(e, handleUserActivity));
+
+      try {
+        await api.post('/logout');
+      } catch (_) {
+        // si falla logout backend igual limpiamos token
+      }
+
+      localStorage.removeItem('auth_token');
+      navigate('/LoginRegister', { state: { logoutSuccess: true } });
+    } catch (error) {
+      localStorage.removeItem('auth_token');
+      navigate('/LoginRegister');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate]);
+
+  const checkAuthError = useCallback(
+    (error) => {
+      const status = error?.response?.status;
+      if (status === 401 || status === 419) {
+        handleLogout();
+        return true;
+      }
+      return false;
+    },
+    [handleLogout]
+  );
+
+  const resetInactivityTimer = useCallback(() => {
     if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
 
-    if (userIsLoggedIn) {
-      inactivityTimerRef.current = setTimeout(() => {
-        if (userIsLoggedIn) { // Solo si sigue logueado
-          handleLogout();
-          alert('Has sido desconectado por inactividad');
-        }
-      }, INACTIVITY_TIMEOUT);
-    }
-  };
+    // Si no hay token, no armamos timer
+    const isLogged = Boolean(localStorage.getItem('auth_token'));
+    if (!isLogged) return;
 
+    inactivityTimerRef.current = setTimeout(() => {
+      // doble-check: sigue logueado
+      if (localStorage.getItem('auth_token')) {
+        alert('Has sido desconectado por inactividad');
+        handleLogout();
+      }
+    }, INACTIVITY_TIMEOUT);
+  }, [handleLogout]);
 
-  const handleUserActivity = () => resetInactivityTimer();
-  const [originalEmail, setOriginalEmail] = useState('');
+  const handleUserActivity = useCallback(() => {
+    resetInactivityTimer();
+  }, [resetInactivityTimer]);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       const response = await api.get('/me');
       if (!response.data) throw new Error('Datos de usuario no recibidos');
 
-      setUserData({
+      setUserData(prev => ({
+        ...prev,
+        id: response.data.id || '',
         name: response.data.name || '',
         email: response.data.email || '',
         phone: response.data.phone || '',
@@ -98,33 +147,18 @@ const Usuario = () => {
         current_password: '',
         password: '',
         password_confirmation: ''
-      });
-      setOriginalEmail(response.data.email || '');
+      }));
     } catch (error) {
       console.error('Error al cargar datos del usuario:', error);
       if (!checkAuthError(error)) {
         handleLogout();
       }
     }
-  };
-
-  const handleLogout = async () => {
-    try {
-      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-
-      // Limpia listeners de actividad
-      const events = ['mousemove', 'keydown', 'click', 'scroll'];
-      events.forEach(e => window.removeEventListener(e, handleUserActivity));
-      await api.post('/logout');
-      localStorage.removeItem('auth_token');
-      navigate('/LoginRegister', { state: { logoutSuccess: true } });
-    } catch (error) {
-      localStorage.removeItem('auth_token');
-      navigate('/LoginRegister');
-    }
-  };
+  }, [checkAuthError, handleLogout]);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchData = async () => {
       try {
         setIsLoading(true);
@@ -135,6 +169,8 @@ const Usuario = () => {
           api.get('/appliances')
         ]);
 
+        if (!mounted) return;
+
         setUserData(prev => ({
           ...prev,
           id: userResponse.data.id || '',
@@ -144,81 +180,76 @@ const Usuario = () => {
           address: userResponse.data.address || ''
         }));
 
-        setServicios(serviciosResponse.data);
-        setAppliances(appliancesResponse.data);
+        setServicios(serviciosResponse.data || []);
+        setAppliances(appliancesResponse.data || []);
       } catch (error) {
         console.error('Error al cargar datos:', error);
-        if (error.response?.status === 401) handleLogout();
+        if (!checkAuthError(error)) {
+          // si es otro error, no bloqueamos la UI con overlay
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     };
 
     const events = ['mousemove', 'keydown', 'click', 'scroll'];
-    events.forEach(e => window.addEventListener(e, handleUserActivity));
+    events.forEach(e => window.addEventListener(e, handleUserActivity, { passive: true }));
+
     resetInactivityTimer();
     fetchData();
-    return () => {
-      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
 
+    return () => {
+      mounted = false;
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      events.forEach(e => window.removeEventListener(e, handleUserActivity));
     };
-  }, []);
+  }, [handleUserActivity, resetInactivityTimer, checkAuthError]);
 
   const validateProfileField = (name, value, allValues = {}) => {
     let error = '';
+    const v = String(value ?? '');
 
-    // Validar si el campo está vacío
-    if (!value || value.trim() === '') {
-      return 'Este campo es obligatorio';
+    // Para contraseña: permitir vacío (no obligatoria)
+    const passwordFields = ['current_password', 'password', 'password_confirmation'];
+    if (!passwordFields.includes(name)) {
+      if (!v.trim()) return 'Este campo es obligatorio';
+    } else {
+      // si está vacío, no error (excepto confirm cuando password trae valor)
+      if (!v.trim() && name !== 'password_confirmation') return '';
     }
 
-    // Validaciones específicas por campo
     if (name === 'name') {
-      if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
-        error = 'El nombre solo debe contener letras';
-      }
+      if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(v)) error = 'El nombre solo debe contener letras';
     }
 
     if (name === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        error = 'Correo electrónico no válido';
-      }
+      if (!emailRegex.test(v)) error = 'Correo electrónico no válido';
     }
 
     if (name === 'phone') {
-      if (!/^\d{7,10}$/.test(value)) {
-        error = 'El teléfono debe tener entre 7 y 10 dígitos';
-      }
+      if (!/^\d{7,10}$/.test(v)) error = 'El teléfono debe tener entre 7 y 10 dígitos';
     }
 
     if (name === 'address') {
-      if (value.trim().length < 5) {
-        error = 'La dirección debe tener al menos 5 caracteres';
-      }
+      if (v.trim().length < 5) error = 'La dirección debe tener al menos 5 caracteres';
     }
 
     if (name === 'password') {
-      if (value.length < 8) {
-        error = 'La contraseña debe tener al menos 8 caracteres';
-      }
+      if (v && v.length < 8) error = 'La contraseña debe tener al menos 8 caracteres';
     }
 
     if (name === 'password_confirmation') {
-      if (value !== allValues.password) {
-        error = 'Las contraseñas no coinciden';
-      }
+      if (allValues.password && v !== allValues.password) error = 'Las contraseñas no coinciden';
     }
 
     return error;
   };
 
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setUserData(prev => {
       const updated = { ...prev, [name]: value };
-      // Validación en tiempo real
       const error = validateProfileField(name, value, updated);
       setErrors(prevErr => ({ ...prevErr, [name]: error }));
       return updated;
@@ -229,13 +260,19 @@ const Usuario = () => {
     const { name, value } = e.target;
     setServiceData(prev => ({ ...prev, [name]: value }));
   };
+
   const buildUpdatePayload = (data) => {
     const payload = {};
     for (const [key, value] of Object.entries(data)) {
-      // Ignora 'id', 'current_password' o campos vacíos
-      if (key !== 'id' && key !== 'current_password' && value !== '') {
-        payload[key] = value;
-      }
+      if (key === 'id') continue;
+      if (key === 'current_password' && !data.password) continue; // solo si va a cambiar password
+      if (value === '') continue;
+      payload[key] = value;
+    }
+    // si no hay password, no mandamos confirmación
+    if (!payload.password) {
+      delete payload.password_confirmation;
+      delete payload.current_password;
     }
     return payload;
   };
@@ -247,10 +284,10 @@ const Usuario = () => {
     setIsLoading(true);
 
     try {
-      const originalEmail = userData.email; // Guarda el email original antes de la actualización
+      const originalEmailBefore = userData.email;
       const dataToUpdate = buildUpdatePayload(userData);
 
-      const response = await api.put(`/users/${userData.id}`, dataToUpdate);
+      await api.put(`/users/${userData.id}`, dataToUpdate);
 
       setSuccessMessage('Perfil actualizado correctamente');
       setUserData(prev => ({
@@ -260,17 +297,15 @@ const Usuario = () => {
         password_confirmation: ''
       }));
 
-      // Si cambió el email, cerrar sesión
-      if (dataToUpdate.email && dataToUpdate.email !== originalEmail) {
+      if (dataToUpdate.email && dataToUpdate.email !== originalEmailBefore) {
         alert('Has cambiado tu correo, por seguridad debes iniciar sesión de nuevo.');
         await handleLogout();
-        return; // Salir para que no vuelva a fetchUserData
+        return;
       }
 
       await fetchUserData();
     } catch (error) {
       if (!checkAuthError(error)) {
-        console.log('Errores desde Laravel:', error.response?.data);
         setErrors(error.response?.data?.errors || { general: 'Error al actualizar perfil' });
       }
     } finally {
@@ -284,22 +319,21 @@ const Usuario = () => {
   };
 
   const handleImageUpload = (e) => {
-    setNewAppliance(prev => ({ ...prev, image: e.target.files[0] }));
+    setNewAppliance(prev => ({ ...prev, image: e.target.files?.[0] || null }));
   };
 
   const saveAppliance = async (e) => {
     e.preventDefault();
     try {
-      const formData = new FormData();
-
+      const fd = new FormData();
       Object.entries(newAppliance).forEach(([key, value]) => {
         if (value) {
           const backendKey = key === 'purchaseDate' ? 'purchase_date' : key;
-          formData.append(backendKey, value);
+          fd.append(backendKey, value);
         }
       });
 
-      const response = await api.post('/appliances', formData, {
+      const response = await api.post('/appliances', fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
@@ -313,9 +347,7 @@ const Usuario = () => {
       });
       setShowApplianceForm(false);
     } catch (error) {
-      if (!checkAuthError(error)) {
-        alert('Error al guardar electrodoméstico');
-      }
+      if (!checkAuthError(error)) alert('Error al guardar electrodoméstico');
     }
   };
 
@@ -324,20 +356,16 @@ const Usuario = () => {
       await api.delete(`/appliances/${id}`);
       setAppliances(prev => prev.filter(app => app.id !== id));
     } catch (error) {
-      if (!checkAuthError(error)) {
-        alert('Error al eliminar electrodoméstico');
-      }
+      if (!checkAuthError(error)) alert('Error al eliminar electrodoméstico');
     }
   };
 
   const updateAppliance = async (id, updatedData) => {
     try {
       const response = await api.put(`/appliances/${id}`, updatedData);
-      setAppliances(prev => prev.map(app => app.id === id ? response.data : app));
+      setAppliances(prev => prev.map(app => (app.id === id ? response.data : app)));
     } catch (error) {
-      if (!checkAuthError(error)) {
-        alert('Error al actualizar electrodoméstico');
-      }
+      if (!checkAuthError(error)) alert('Error al actualizar electrodoméstico');
     }
   };
 
@@ -346,20 +374,27 @@ const Usuario = () => {
     try {
       const response = await api.post('/servicios', serviceData);
       setServicios(prev => [...prev, response.data]);
-      alert("Servicio técnico creado con éxito!");
+      alert('Servicio técnico creado con éxito!');
       setServiceData({
-        tipo_equipo: '',
+        tipo_equipo: 'lavadora',
         marca: '',
         modelo: '',
         descripcion_problema: '',
         fecha_solicitud: new Date().toISOString().split('T')[0]
       });
     } catch (error) {
-      if (!checkAuthError(error)) {
-        alert("Error al crear servicio técnico");
-      }
+      if (!checkAuthError(error)) alert('Error al crear servicio técnico');
     }
   };
+
+  const benefits = useMemo(() => ([
+    { icon: Calidad, title: 'Calidad', text: 'Servicios garantizados con los mejores técnicos.' },
+    { icon: Rapidez, title: 'Rapidez', text: 'Atención inmediata y eficiente a domicilio.' },
+    { icon: Soporte, title: 'Soporte', text: 'Soporte continuo para cualquier consulta.' },
+    { icon: Garantia, title: 'Garantía', text: 'Obtén el beneficio de garantía extendida por hasta dos años.' },
+    { icon: Tecnico, title: 'Técnicos Certificados', text: 'Nuestros técnicos están certificados y capacitados.' },
+    { icon: Descuento, title: 'Descuentos Exclusivos', text: 'Accede a promociones especiales solo disponibles aquí.' }
+  ]), []);
 
   if (isLoading) {
     return (
@@ -376,18 +411,57 @@ const Usuario = () => {
         <header className="compact-header">
           <div className="logo-area">
             <img src={logoImg} alt="Logo ElectroElite" className="logo-img" />
-            <span className="logo-text">ElectroElite</span>
+
+            {/* ✅ Cambio pedido: al hacer click en el título, recarga la página */}
+            <button
+              type="button"
+              className="logo-text"
+              onClick={() => window.location.reload()}
+              aria-label="Recargar página"
+              title="Recargar"
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                margin: 0,
+                font: 'inherit',
+                color: 'inherit',
+                cursor: 'pointer'
+              }}
+            >
+              ElectroElite
+            </button>
           </div>
+
           <div className="header-controls">
             <div className="controls-spacer"></div>
-            <button className="profile-btn" onClick={() => {
-              setOriginalProfileData(userData);
-              setShowProfileModal(true);
-            }}>
-              <FaUser className="icon" />
-              <span>Perfil</span>
+
+            {/* ✅ Ícono forzado para que se vea incluso si el CSS del header lo oculta */}
+            <button
+              className="profile-btn"
+              onClick={() => {
+                setOriginalProfileData(userData);
+                setShowProfileModal(true);
+              }}
+              type="button"
+              aria-label="Abrir perfil"
+              title="Perfil"
+            >
+              <FaUser
+                size={20}
+                style={{
+                  display: 'inline-block',
+                  width: 20,
+                  height: 20,
+                  color: '#111',
+                  verticalAlign: 'middle'
+                }}
+              />
             </button>
-            <button className="logout-btn" onClick={handleLogout}>Salir</button>
+
+            <button className="logout-btn" onClick={handleLogout} type="button">
+              Salir
+            </button>
           </div>
         </header>
 
@@ -437,30 +511,70 @@ const Usuario = () => {
             <div className="form-grid">
               <div className="form-group">
                 <label>Tipo de Equipo</label>
-                <select name="tipo_equipo" value={serviceData.tipo_equipo} onChange={handleServiceInputChange} required>
+                <select
+                  name="tipo_equipo"
+                  value={serviceData.tipo_equipo}
+                  onChange={handleServiceInputChange}
+                  required
+                >
                   <option value="lavadora">Lavadora</option>
                   <option value="nevera">Nevera</option>
                 </select>
               </div>
+
               <div className="form-group">
                 <label>Marca</label>
-                <input type="text" name="marca" value={serviceData.marca} onChange={handleServiceInputChange} required placeholder="Ej: Samsung, LG, etc." />
+                <input
+                  type="text"
+                  name="marca"
+                  value={serviceData.marca}
+                  onChange={handleServiceInputChange}
+                  required
+                  placeholder="Ej: Samsung, LG, etc."
+                />
               </div>
+
               <div className="form-group">
                 <label>Modelo</label>
-                <input type="text" name="modelo" value={serviceData.modelo} onChange={handleServiceInputChange} required placeholder="Modelo del equipo" />
+                <input
+                  type="text"
+                  name="modelo"
+                  value={serviceData.modelo}
+                  onChange={handleServiceInputChange}
+                  required
+                  placeholder="Modelo del equipo"
+                />
               </div>
+
               <div className="form-group full-width">
                 <label>Descripción del Problema</label>
-                <textarea name="descripcion_problema" value={serviceData.descripcion_problema} onChange={handleServiceInputChange} required placeholder="Describa el problema con detalle" rows="4" />
+                <textarea
+                  name="descripcion_problema"
+                  value={serviceData.descripcion_problema}
+                  onChange={handleServiceInputChange}
+                  required
+                  placeholder="Describa el problema con detalle"
+                  rows="4"
+                />
               </div>
+
               <div className="form-group">
                 <label>Fecha de Solicitud</label>
-                <input type="date" name="fecha_solicitud" value={serviceData.fecha_solicitud} onChange={handleServiceInputChange} required min={new Date().toISOString().split("T")[0]} />
+                <input
+                  type="date"
+                  name="fecha_solicitud"
+                  value={serviceData.fecha_solicitud}
+                  onChange={handleServiceInputChange}
+                  required
+                  min={new Date().toISOString().split("T")[0]}
+                />
               </div>
             </div>
+
             <div className="form-submit">
-              <button type="submit" className="submit-btn">Crear Servicio Técnico</button>
+              <button type="submit" className="submit-btn">
+                Crear Servicio Técnico
+              </button>
             </div>
           </form>
         </section>
@@ -468,7 +582,11 @@ const Usuario = () => {
         <section className="appliances-section">
           <div className="section-header">
             <h2>Mis Electrodomésticos</h2>
-            <button className="add-appliance-btn" onClick={() => setShowApplianceForm(true)}>
+            <button
+              className="add-appliance-btn"
+              onClick={() => setShowApplianceForm(true)}
+              type="button"
+            >
               <FaPlus /> Añadir Electrodoméstico
             </button>
           </div>
@@ -477,49 +595,96 @@ const Usuario = () => {
             <div className="appliance-form-container">
               <form className="appliance-form" onSubmit={saveAppliance}>
                 <h3 className="form-title">Agregar Nuevo Electrodoméstico</h3>
+
                 <div className="form-grid">
                   <div className="form-group">
                     <label>Tipo</label>
-                    <select name="type" value={newAppliance.type} onChange={handleApplianceChange} required className="form-control">
+                    <select
+                      name="type"
+                      value={newAppliance.type}
+                      onChange={handleApplianceChange}
+                      required
+                      className="form-control"
+                    >
                       <option value="nevera">Nevera</option>
                       <option value="lavadora">Lavadora</option>
                     </select>
                   </div>
+
                   <div className="form-group">
                     <label>Marca</label>
-                    <input type="text" name="brand" value={newAppliance.brand} onChange={handleApplianceChange} required className="form-control" placeholder="Ej: Samsung, LG, etc." />
+                    <input
+                      type="text"
+                      name="brand"
+                      value={newAppliance.brand}
+                      onChange={handleApplianceChange}
+                      required
+                      className="form-control"
+                      placeholder="Ej: Samsung, LG, etc."
+                    />
                   </div>
+
                   <div className="form-group">
                     <label>Modelo</label>
-                    <input type="text" name="model" value={newAppliance.model} onChange={handleApplianceChange} required className="form-control" placeholder="Ej: XT-2000, 4K-UHD, etc." />
+                    <input
+                      type="text"
+                      name="model"
+                      value={newAppliance.model}
+                      onChange={handleApplianceChange}
+                      required
+                      className="form-control"
+                      placeholder="Ej: XT-2000, 4K-UHD, etc."
+                    />
                   </div>
+
                   <div className="form-group">
                     <label>Fecha de compra</label>
-                    <input type="date" name="purchaseDate" value={newAppliance.purchaseDate} onChange={handleApplianceChange} required className="form-control" />
+                    <input
+                      type="date"
+                      name="purchaseDate"
+                      value={newAppliance.purchaseDate}
+                      onChange={handleApplianceChange}
+                      required
+                      className="form-control"
+                    />
                   </div>
+
                   <div className="form-group full-width">
                     <label>Imagen (opcional)</label>
                     <div className="file-upload-wrapper">
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className="file-input" id="appliance-image" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="file-input"
+                        id="appliance-image"
+                      />
                       <label htmlFor="appliance-image" className="file-upload-label">
                         {newAppliance.image ? newAppliance.image.name : 'Seleccionar imagen...'}
                       </label>
                     </div>
-                    {newAppliance.image && (
+
+                    {previewUrl && (
                       <div className="image-preview">
                         <span>Vista previa:</span>
-                        <img src={URL.createObjectURL(newAppliance.image)} alt="Vista previa" className="preview-image" />
+                        <img src={previewUrl} alt="Vista previa" className="preview-image" />
                       </div>
                     )}
                   </div>
                 </div>
+
                 <div className="form-actions">
-                  <button type="button" className="cancel-btn" onClick={() => setShowApplianceForm(false)}>Cancelar</button>
-                  <button type="submit" className="save-btn">Guardar Electrodoméstico</button>
+                  <button type="button" className="cancel-btn" onClick={() => setShowApplianceForm(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="save-btn">
+                    Guardar Electrodoméstico
+                  </button>
                 </div>
               </form>
             </div>
           )}
+
           <div className="appliances-grid">
             {appliances.length > 0 ? (
               appliances.map(appliance => (
@@ -529,101 +694,104 @@ const Usuario = () => {
                       <img src={appliance.image_url} alt={appliance.type} />
                     ) : (
                       <div className="default-image">
-                        {appliance.image ? (
-                          <img
-                            src={appliance.image}
-                            alt={appliance.type}
-                            className="w-20 h-20 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <span className="text-4xl">
-                            {appliance.type === 'nevera' ? <FaSnowflake /> : <FaTshirt />}
-                          </span>
-                        )}
+                        {appliance.type === 'nevera' ? <FaSnowflake /> : <FaTshirt />}
                       </div>
                     )}
                   </div>
 
                   <div className="appliance-info">
                     {editId === appliance.id ? (
-                      <>
-                        <div className="edit-form">
-                          <div className="form-group">
-                            <label>Tipo:</label>
-                            <input
-                              type="text"
-                              name="type"
-                              value={editData.type}
-                              onChange={(e) => setEditData(prev => ({ ...prev, type: e.target.value }))}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Marca:</label>
-                            <input
-                              type="text"
-                              name="brand"
-                              value={editData.brand}
-                              onChange={(e) => setEditData(prev => ({ ...prev, brand: e.target.value }))}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Modelo:</label>
-                            <input
-                              type="text"
-                              name="model"
-                              value={editData.model}
-                              onChange={(e) => setEditData(prev => ({ ...prev, model: e.target.value }))}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Comprado:</label>
-                            <input
-                              type="date"
-                              name="purchase_date"
-                              value={editData.purchase_date}
-                              onChange={(e) => setEditData(prev => ({ ...prev, purchase_date: e.target.value }))}
-                            />
-                          </div>
-
-                          <div className="button-group">
-                            <button onClick={async () => { await updateAppliance(appliance.id, editData); setEditId(null); }} className="btn-save">
-                              Guardar
-                            </button>
-
-                            <button onClick={() => setEditId(null)} className="btn-cancel">
-                              Cancelar
-                            </button>
-                          </div>
+                      <div className="edit-form">
+                        <div className="form-group">
+                          <label>Tipo:</label>
+                          <input
+                            type="text"
+                            name="type"
+                            value={editData.type || ''}
+                            onChange={(e) => setEditData(prev => ({ ...prev, type: e.target.value }))}
+                          />
                         </div>
-                      </>) : (
+
+                        <div className="form-group">
+                          <label>Marca:</label>
+                          <input
+                            type="text"
+                            name="brand"
+                            value={editData.brand || ''}
+                            onChange={(e) => setEditData(prev => ({ ...prev, brand: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Modelo:</label>
+                          <input
+                            type="text"
+                            name="model"
+                            value={editData.model || ''}
+                            onChange={(e) => setEditData(prev => ({ ...prev, model: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="form-group">
+                          <label>Comprado:</label>
+                          <input
+                            type="date"
+                            name="purchase_date"
+                            value={editData.purchase_date || ''}
+                            onChange={(e) => setEditData(prev => ({ ...prev, purchase_date: e.target.value }))}
+                          />
+                        </div>
+
+                        <div className="button-group">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              await updateAppliance(appliance.id, editData);
+                              setEditId(null);
+                            }}
+                            className="btn-save"
+                          >
+                            Guardar
+                          </button>
+
+                          <button type="button" onClick={() => setEditId(null)} className="btn-cancel">
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
                       <>
-                        <h3>{appliance.type.charAt(0).toUpperCase() + appliance.type.slice(1)}</h3>
+                        <h3>{appliance.type?.charAt(0).toUpperCase() + appliance.type?.slice(1)}</h3>
                         <p><strong>Marca:</strong> {appliance.brand}</p>
                         <p><strong>Modelo:</strong> {appliance.model}</p>
                         <p><strong>Comprado:</strong> {appliance.purchase_date ? new Date(appliance.purchase_date).toLocaleDateString() : 'No especificado'}</p>
 
-                        <button className="edit-btn" onClick={() => {
-                          setEditId(appliance.id);
-                          setEditData({
-                            type: appliance.type,
-                            brand: appliance.brand,
-                            model: appliance.model,
-                            purchase_date: appliance.purchase_date ? appliance.purchase_date.split('T')[0] : ''
-                          });
-                        }}>
+                        <button
+                          className="edit-btn"
+                          type="button"
+                          onClick={() => {
+                            setEditId(appliance.id);
+                            setEditData({
+                              type: appliance.type,
+                              brand: appliance.brand,
+                              model: appliance.model,
+                              purchase_date: appliance.purchase_date ? appliance.purchase_date.split('T')[0] : ''
+                            });
+                          }}
+                        >
                           <FaEdit />
                         </button>
-                        <button className="delete-btn" onClick={() => deleteAppliance(appliance.id)}>
+
+                        <button className="delete-btn" type="button" onClick={() => deleteAppliance(appliance.id)}>
                           <FaTrash />
                         </button>
                       </>
                     )}
                   </div>
+
                   <button
                     className="solicitar-servicio-btn"
+                    type="button"
                     onClick={() => {
                       setSelectedAppliance(appliance);
                       setShowServiceModal(true);
@@ -647,15 +815,9 @@ const Usuario = () => {
             <h2>Nuestros Beneficios</h2>
             <p>Con ElectroElite, tienes la seguridad de un servicio confiable y garantizado</p>
           </div>
+
           <div className="benefits-grid">
-            {[
-              { icon: Calidad, title: 'Calidad', text: 'Servicios garantizados con los mejores técnicos.' },
-              { icon: Rapidez, title: 'Rapidez', text: 'Atención inmediata y eficiente a domicilio.' },
-              { icon: Soporte, title: 'Soporte', text: 'Soporte continuo para cualquier consulta.' },
-              { icon: Garantia, title: 'Garantía', text: 'Obtén el beneficio de garantía extendida por hasta dos años.' },
-              { icon: Tecnico, title: 'Técnicos Certificados', text: 'Nuestros técnicos están certificados y capacitados.' },
-              { icon: Descuento, title: 'Descuentos Exclusivos', text: 'Accede a promociones especiales solo disponibles aquí.' }
-            ].map((benefit, index) => (
+            {benefits.map((benefit, index) => (
               <div key={index} className="benefit-card">
                 <div className="benefit-icon">
                   <img src={benefit.icon} alt={benefit.title} />
@@ -667,21 +829,39 @@ const Usuario = () => {
           </div>
         </section>
 
-        {/*Modal perfil*/}
-        <div className={`modal-overlay ${showProfileModal ? 'show' : ''}`}>
-          {showProfileModal && (
-            <div className="modal-content">
+        {/* ✅ Modal perfil: NO se renderiza si no está abierto */}
+        {showProfileModal && (
+          <div
+            className="modal-overlay show"
+            onClick={() => {
+              setUserData(originalProfileData);
+              setErrors({});
+              setShowProfileModal(false);
+            }}
+          >
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h3>Perfil de {userData.name || 'Usuario'}</h3>
-                <button onClick={() => setShowProfileModal(false)}>×</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserData(originalProfileData);
+                    setErrors({});
+                    setShowProfileModal(false);
+                  }}
+                >
+                  ×
+                </button>
               </div>
+
               <form className="profile-form" onSubmit={handleSubmit}>
                 {successMessage && (
                   <div className="alert alert-success">
                     {successMessage}
-                    <button onClick={() => setSuccessMessage('')}>×</button>
+                    <button type="button" onClick={() => setSuccessMessage('')}>×</button>
                   </div>
                 )}
+
                 {errors.general && (
                   <div className="alert alert-danger">
                     {errors.general}
@@ -697,6 +877,7 @@ const Usuario = () => {
                     </button>
                   </div>
                 )}
+
                 {['name', 'email', 'phone', 'address'].map(field => (
                   <div key={field} className="form-group">
                     <label>{{
@@ -705,6 +886,7 @@ const Usuario = () => {
                       phone: 'Teléfono',
                       address: 'Dirección'
                     }[field]}</label>
+
                     <input
                       type={{
                         name: 'text',
@@ -713,10 +895,11 @@ const Usuario = () => {
                         address: 'text'
                       }[field]}
                       name={field}
-                      value={userData[field]}
+                      value={userData[field] || ''}
                       onChange={handleInputChange}
                       className={errors[field] ? 'is-invalid' : ''}
                     />
+
                     {errors[field] && (
                       <div className="invalid-feedback">
                         {Array.isArray(errors[field]) ? errors[field][0] : errors[field]}
@@ -736,10 +919,11 @@ const Usuario = () => {
                         password: 'Nueva contraseña',
                         password_confirmation: 'Confirmar nueva contraseña'
                       }[field]}</label>
+
                       <input
                         type="password"
                         name={field}
-                        value={userData[field]}
+                        value={userData[field] || ''}
                         onChange={handleInputChange}
                         placeholder={{
                           current_password: 'Ingresa tu contraseña actual',
@@ -748,7 +932,12 @@ const Usuario = () => {
                         }[field]}
                         className={errors[field] ? 'is-invalid' : ''}
                       />
-                      {errors[field] && <div className="invalid-feedback">{errors[field][0]}</div>}
+
+                      {errors[field] && (
+                        <div className="invalid-feedback">
+                          {Array.isArray(errors[field]) ? errors[field][0] : errors[field]}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -759,40 +948,66 @@ const Usuario = () => {
                     className="cancel-btn"
                     onClick={() => {
                       setUserData(originalProfileData);
-                      setShowProfileModal(false);
                       setErrors({});
+                      setShowProfileModal(false);
                     }}
                     disabled={isLoading}
                   >
                     Cancelar
                   </button>
+
                   <button type="submit" className="save-btn" disabled={isLoading}>
                     {isLoading ? 'Guardando...' : 'Guardar cambios'}
                   </button>
                 </div>
               </form>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <footer className="app-footer">
           <div className="footer-content">
             <p>&copy; {new Date().getFullYear()} ElectroElite. Todos los derechos reservados.</p>
+
+            {/* ✅ Warnings corregidos: botones con estilo de link */}
             <div className="footer-links">
-              <a href="#">Términos y condiciones</a>
-              <a href="#">Política de privacidad</a>
-              <a href="#">Contacto</a>
+              <button type="button" className="footer-link-btn">
+                Términos y condiciones
+              </button>
+              <button type="button" className="footer-link-btn">
+                Política de privacidad
+              </button>
+              <button type="button" className="footer-link-btn">
+                Contacto
+              </button>
             </div>
           </div>
         </footer>
       </div>
+
+      {/* ✅ Modal solicitar servicio: también condicional + backdrop click */}
       {showServiceModal && selectedAppliance && (
-        <div className="modal-overlay show">
-          <div className="modal-content">
+        <div
+          className="modal-overlay show"
+          onClick={() => {
+            setShowServiceModal(false);
+            setServiceDescription('');
+          }}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Solicitar Servicio para {selectedAppliance.type} {selectedAppliance.brand}</h3>
-              <button onClick={() => setShowServiceModal(false)}>×</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowServiceModal(false);
+                  setServiceDescription('');
+                }}
+              >
+                ×
+              </button>
             </div>
+
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
@@ -822,10 +1037,19 @@ const Usuario = () => {
                   rows={4}
                 />
               </div>
+
               <div className="form-actions">
-                <button type="button" className="cancel-btn" onClick={() => setShowServiceModal(false)}>
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => {
+                    setShowServiceModal(false);
+                    setServiceDescription('');
+                  }}
+                >
                   Cancelar
                 </button>
+
                 <button type="submit" className="save-btn">
                   Solicitar Servicio
                 </button>
@@ -834,6 +1058,23 @@ const Usuario = () => {
           </div>
         </div>
       )}
+
+      {/* ✅ Estilos mínimos para que los botones del footer parezcan links */}
+      <style>{`
+        .footer-link-btn{
+          background:none;
+          border:none;
+          padding:0;
+          margin:0;
+          color:inherit;
+          font:inherit;
+          cursor:pointer;
+          text-decoration:none;
+        }
+        .footer-link-btn:hover{
+          text-decoration:underline;
+        }
+      `}</style>
     </UserContext.Provider>
   );
 };

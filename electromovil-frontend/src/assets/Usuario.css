@@ -69,6 +69,17 @@ body {
   color: var(--white);
 }
 
+/* ✅ FIX: si .logo-text ahora es un <button>, lo dejamos como texto */
+.logo-text {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  line-height: 1;
+}
+
 .compact-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
@@ -266,7 +277,6 @@ body {
   cursor: pointer;
 }
 
-
 .form-group textarea:focus {
   border-color: #007bff;
   outline: none;
@@ -332,6 +342,22 @@ body {
 
 .profile-btn .icon {
   font-size: 1rem;
+}
+
+/* ✅ FIX: fuerza el SVG del ícono a verse SIEMPRE en el header (BLANCO) */
+.profile-btn svg {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  flex-shrink: 0 !important;
+}
+
+.profile-btn svg * {
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 .logout-btn {
@@ -747,7 +773,6 @@ select.form-control {
   background-color: rgba(52, 152, 219, 0.9);
   /* azul */
 }
-
 
 .delete-btn:hover {
   background-color: var(--danger-color);

@@ -24,14 +24,14 @@
     width: 850px;
     height: 550px;
     background: #fff;
-    margin: 20px;
+    margin: 10px;
     border-radius: 30px;
     box-shadow: 0 0 30px rgba(0, 0, 0, .2);
     overflow: hidden;
 }
 
 .container h1 {
-    font-size: 36px;
+    font-size: 26px;
     margin: -10px 0;
 }
 
@@ -56,7 +56,7 @@ form {
     text-align: center;
     padding: 40px;
     z-index: 1;
-    transition: .6s ease-in-out 1.2s, visibility 0s 1s;
+    transition: .8s ease-in-out 1.2s, visibility 0s 1s;
 }
 
 .container.active .form-box {
@@ -162,10 +162,9 @@ form {
     transition: background-color 0.3s, color 0.3s;
 }
 
-
 .toggle-box {
     position: absolute;
-    width: 100%;
+    width: 90%;
     height: 100%;
 }
 
@@ -232,15 +231,29 @@ form {
     box-shadow: none;
 }
 
+/* ============================
+   ✅ Responsive (MEJORADO)
+   ============================ */
 @media screen and (max-width: 650px) {
+    .login-register {
+        padding: 14px 10px;
+        align-items: center;
+    }
+
     .container {
-        height: calc(100vh - 40px);
+        width: 92vw;              /* ocupa bien el ancho del móvil */
+        max-width: 420px;         /* se ve “app-like”, no gigante */
+        height: calc(100vh - 28px);
+        margin: 0 auto;
+        border-radius: 30px;
     }
 
     .form-box {
         bottom: 0;
         width: 100%;
         height: 70%;
+        padding: 22px;
+        right: 0;
     }
 
     .container.active .form-box {
@@ -248,31 +261,37 @@ form {
         bottom: 30%;
     }
 
+    /* Fondo curvo superior: lo centramos de verdad para que no “se corra” */
     .toggle-box::before {
-        left: 0;
+        left: 50%;
+        transform: translateX(-50%);
         top: -270%;
-        width: 100%;
+        width: 120%;
         height: 300%;
-        border-radius: 20vw;
+        border-radius: 24vw;
     }
 
     .container.active .toggle-box::before {
-        left: 0;
+        left: 50%;
+        transform: translateX(-50%);
         top: 70%;
-    }
-
-    .container.active .toggle-panel.toggle-left {
-        left: 0;
-        top: -30%;
     }
 
     .toggle-panel {
         width: 100%;
         height: 30%;
+        padding: 14px 16px;
+        text-align: center;
     }
 
     .toggle-panel.toggle-left {
         top: 0;
+        left: 0;
+    }
+
+    .container.active .toggle-panel.toggle-left {
+        left: 0;
+        top: -30%;
     }
 
     .toggle-panel.toggle-right {
@@ -283,15 +302,49 @@ form {
     .container.active .toggle-panel.toggle-right {
         bottom: 0;
     }
+
+    /* Ajustes visuales para que se vea “pro” en móvil */
+    .toggle-panel h1 {
+        font-size: 28px;
+        line-height: 1.1;
+        margin: 0 0 6px;
+    }
+
+    .toggle-panel p {
+        margin: 6px 0 12px;
+        font-size: 13.5px;
+    }
+
+    .social-icons a {
+        margin: 0 6px;
+        padding: 9px;
+        font-size: 22px;
+        border-radius: 10px;
+    }
+
+    .toggle-panel .btn {
+        width: 160px;
+        height: 44px;
+    }
+
+    .input-box {
+        margin: 18px 0;
+    }
+
+    .input-box input {
+        font-size: 15px;
+        padding: 12px 46px 12px 16px;
+    }
 }
 
-@media screen and (max-width: 400px) {
+/* Mantengo tu breakpoint, solo afinando tamaños (sin cambiar lógica) */
+@media screen and (max-width: 600px) {
     .form-box {
         padding: 20px;
     }
 
     .toggle-panel h1 {
-        font-size: 30px;
+        font-size: 28px;
     }
 }
 

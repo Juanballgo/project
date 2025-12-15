@@ -1,265 +1,724 @@
-/* Estilos para el Admin Dashboard */
+/* =========================
+   ADMIN DASHBOARD (ElectroElite)
+   Rediseño visual: más aire, menos “pegado”, responsive.
+   ========================= */
 
-/* Estructura principal */
-.admin-content,
-.content-container,
-.services-management-container {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box;
-  padding: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  border: none !important;
-}
-.services-management-container .table {
-  width: 100% !important;
-  margin: 0;
-  border-radius: 16px;
-  box-shadow: 0 2px 16px rgba(44,62,80,0.07);
-  background: #fff;
-}
+:root{
+  --bg: #eef3fb;
+  --surface: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
 
-/* Sidebar */
-.sidebar {
-  padding-right: 1rem;
+  --brand: #2c3e50;
+  --brand-2: #1f2b36;
+
+  --line: rgba(15, 23, 42, 0.08);
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+  --shadow-soft: 0 6px 18px rgba(15, 23, 42, 0.08);
+
+  --radius: 18px;
+  --radius-lg: 22px;
 }
 
-.sidebar .list-group-item {
-  border: none;
-  border-radius: var(--border-radius);
-  margin-bottom: 0.5rem;
-  color: var(--black);
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  padding: 0.75rem 1.25rem;
-}
-
-.sidebar .list-group-item:hover {
-  background-color: var(--light-gray);
-  transform: translateX(5px);
-}
-
-.sidebar .list-group-item.active {
-  background-color: var(--primary-color);
-  color: var(--white);
-}
-
-.sidebar .list-group-item i {
-  font-size: 1.1rem;
-}
-
-/* --- Nuevo diseño para el dashboard principal --- */
-
-.dashboard-container {
-  padding: 2.5rem 2rem 1.5rem 2rem;
-  background: #f8fafc;
-  border-radius: 22px;
-  box-shadow: none;
-  margin: 2rem auto 0 auto;
-  max-width: 1400px;
-
-}
-
-.dashboard-title {
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: #232f3e;
-  margin-bottom: 0.3rem;
-  letter-spacing: 0.5px;
-}
-
-.dashboard-subtitle {
-  font-size: 1.15rem;
-  color: #6c7a89;
-  margin-bottom: 2.2rem;
-}
-
-.dashboard-options {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-  gap: 2rem;
-  margin-top: 1.5rem;
-}
-
-.dashboard-card {
-  background: #fff;
-  text-decoration: none;
-  border-radius: 18px;
-  box-shadow: 0 4px 24px rgba(44,62,80,0.08);
-  padding: 2.2rem 1.5rem 1.7rem 1.5rem;
-  text-align: center;
-  transition: transform 0.18s, box-shadow 0.18s;
-  border: none;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  min-height: 220px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.dashboard-card:hover {
-  transform: translateY(-7px) scale(1.03);
-  box-shadow: 0 12px 32px rgba(44,62,80,0.13);
-  background: linear-gradient(120deg, #f7fafd 60%, #e3f0ff 100%);
-}
-
-.card-icon {
-  font-size: 2.8rem;
-  margin-bottom: 1.3rem;
-  color: #ffd700;
-  background: #232f3e;
-  border-radius: 50%;
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: auto;
-  margin-right: auto;
-  box-shadow: 0 2px 8px rgba(44,62,80,0.10);
-}
-
-.dashboard-card h3 {
-  font-size: 1.35rem;
-  font-weight: 800;
-  color: #232f3e;
-  margin-bottom: 0.7rem;
-}
-
-.dashboard-card p {
-  color: #6c7a89;
-  font-size: 1.05rem;
-  line-height: 1.5;
-  margin-bottom: 0;
-}
-
-@media (max-width: 900px) {
-  .dashboard-container {
-    padding: 1.2rem 0.5rem;
-  }
-  .dashboard-options {
-    gap: 1.2rem;
-  }
-  .dashboard-card {
-    padding: 1.3rem 0.7rem 1.1rem 0.7rem;
-    min-height: 170px;
-  }
-  .card-icon {
-    font-size: 2.1rem;
-    width: 48px;
-    height: 48px;
-  }
-  .dashboard-title {
-    font-size: 1.5rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .content-container {
-    padding: 1rem;
-  }
-
-  .dashboard-options {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-title {
-    font-size: 1.6rem;
-  }
-
-  .dashboard-subtitle {
-    font-size: 1rem;
-  }
-
-  .card-icon {
-    font-size: 2rem;
-  }
-
-  .dashboard-card h3 {
-    font-size: 1.2rem;
-  }
-
-.admin-logo {
-  display: flex;
-  align-items: center;
-  font-size: 2rem;
-  font-weight: bold;
-  color: #232f3e;
-  margin: 0;
-  gap: 12px; /* Espacio entre logo y texto */
-}
-
-.logo-img {
-  height: 48px;
-  width: auto;
-  margin-right: 0;
-  display: inline-block;
-}
-
-.logo-text {
-  display: inline-block;
-  vertical-align: middle;
-}
-
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--primary-color);
-  }
-}
-body, #root {
+.usuario-container{
   min-height: 100vh;
-  height: 100%;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(180deg, #f6f8ff 0%, var(--bg) 100%);
+  color: var(--ink);
 }
 
-.admin-content {
-  flex: 1 1 auto;
-  /* Asegura que crezca y empuje el footer abajo */
+/* =========================
+   HEADER (Compacto y limpio)
+   ========================= */
+.compact-header{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--brand);
+  color: #fff;
+  padding: 14px 18px;     /* antes se veía “muy grande” */
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  flex-wrap: nowrap; /* ✅ evita que se desordene en móvil */
 }
 
-.footer {
-  flex-shrink: 0;
-}
-.pagination-controls {
+.admin-logo{
+  display: flex;
+  align-items: center;
   gap: 10px;
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.2px;
+  user-select: none;
+  flex: 0 1 auto;
+
+  /* ✅ Para que en móvil no empuje a los botones */
+  min-width: 0;
 }
 
-/* Spinner styles */
-.custom-spinner-container {
+.logo-img{
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgba(255,255,255,0.12);
+  padding: 4px;
+}
+
+.logo-text{
+  font-weight: 700;
+  line-height: 1;
+
+  /* ✅ Si no cabe en móvil, recorta sin romper layout */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.header-controls{
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto; /* ✅ fuerza a la derecha */
+  flex: 0 0 auto;
+
+  /* ✅ Asegura fila siempre */
+  flex-direction: row;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+
+.controls-spacer{
+  width: 6px;
+}
+
+/* Botones header */
+.profile-btn{
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 80vh;
-   width: 100%;
+  cursor: pointer;
+  transition: transform .15s ease, background .2s ease, border-color .2s ease;
+
+  /* ✅ Evita que se estire raro */
+  flex: 0 0 auto;
 }
 
-.custom-spinner {
-  width: 56px;
-  height: 56px;
-  border: 6px solid #e0e0e0;
-  border-top: 6px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 18px;
+.profile-btn:hover{
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.35);
+  transform: translateY(-1px);
 }
 
-@keyframes spin {
+.logout-btn{
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform .15s ease, background .2s ease, border-color .2s ease;
+
+  /* ✅ Evita saltos */
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.logout-btn:hover{
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.35);
+  transform: translateY(-1px);
+}
+
+/* =========================
+   CONTENIDO
+   ========================= */
+.admin-content{
+  width: 100%;
+  flex: 1;
+  padding: 22px 18px 26px;
+}
+
+.dashboard-container{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 10px 10px;
+}
+
+.dashboard-title{
+  font-size: 28px;
+  font-weight: 800;
+  margin: 4px 0 6px;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+
+.dashboard-subtitle{
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* Grid de cards */
+.dashboard-options{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Card */
+.dashboard-card{
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 16px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow-soft);
+  transition: transform .16s ease, box-shadow .2s ease, border-color .2s ease;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dashboard-card:hover{
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  border-color: rgba(44, 62, 80, 0.22);
+}
+
+.card-icon{
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(44, 62, 80, 0.10);
+  border: 1px solid rgba(44, 62, 80, 0.14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  color: var(--brand);
+  font-size: 26px;
+}
+
+.dashboard-card h3{
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.dashboard-card p{
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* Cuando no estás en /admin (Outlet) */
+.content-container{
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* =========================
+   FOOTER (más compacto)
+   ========================= */
+.app-footer{
+  background: var(--brand);
+  color: #fff;
+  padding: 14px 16px;   /* antes parecía “muy alto” */
+  margin-top: auto;
+}
+
+.footer-content{
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.footer-content p{
+  margin: 0;
+  font-size: 13.5px;
+  opacity: 0.95;
+}
+
+.footer-links{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.footer-link{
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.footer-link:hover{
+  opacity: 0.85;
+}
+
+/* =========================
+   LOADING
+   ========================= */
+.loading-container{
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--muted);
+}
+
+.spinner{
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 3px solid rgba(44,62,80,0.25);
+  border-top-color: rgba(44,62,80,0.95);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin{
   to { transform: rotate(360deg); }
 }
 
-.spinner-text {
-  font-size: 1.15rem;
-  color: #007bff;
-  font-weight: 500;
-  letter-spacing: 0.5px;
+/* =========================
+   MODAL (Scroll + colores profesionales)
+   ========================= */
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 2000;
+
+  overflow: auto;               /* ✅ permite scroll si el modal es alto */
+  -webkit-overflow-scrolling: touch;
 }
+
+.modal-content{
+  width: min(560px, 100%);
+  background: var(--surface);
+  border-radius: 18px;
+  border: px solid var(--line);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+
+  max-height: calc(100vh - 36px); /* ✅ límite para que no se salga de pantalla */
+  display: flex;                  /* ✅ para separar header y body scrollable */
+  flex-direction: column;
+}
+
+.modal-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(44, 62, 80, 0.08); /* ✅ consistente con brand */
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-header h3{
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.modal-header button{
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.14);
+  background: rgba(15,23,42,0.04); /* ✅ ya no negro */
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink);
+  transition: transform .15s ease, background .2s ease, border-color .2s ease;
+}
+
+.modal-header button:hover{
+  transform: translateY(-1px);
+  background: rgba(15,23,42,0.08);
+  border-color: rgba(15,23,42,0.22);
+}
+
+.profile-form{
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+
+  overflow: auto;                /* ✅ el contenido del form scrollea */
+  -webkit-overflow-scrolling: touch;
+}
+
+.form-group{
+  display: grid;
+  gap: 6px;
+}
+
+.form-group label{
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.form-group input{
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(15,23,42,0.12);
+  padding: 0 12px;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  background: #f1f5f9;           /* ✅ más profesional */
+  color: var(--ink);
+}
+
+.form-group input:focus{
+  border-color: rgba(44,62,80,0.45);
+  box-shadow: 0 0 0 4px rgba(44,62,80,0.12);
+  background: #ffffff;
+}
+
+.password-section{
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(15,23,42,0.14);
+}
+
+.password-section h4{
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.form-actions{
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.cancel-btn,
+.save-btn{
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-weight: 700;
+  transition: transform .15s ease, background .2s ease, border-color .2s ease;
+}
+
+.cancel-btn{
+  background: rgba(15,23,42,0.06);
+  color: var(--ink);
+}
+
+.cancel-btn:hover{
+  background: rgba(15,23,42,0.10);
+  transform: translateY(-1px);
+}
+
+.save-btn{
+  background: var(--brand);
+  color: #fff;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.save-btn:hover{
+  background: var(--brand-2);
+  transform: translateY(-1px);
+}
+
+
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 900px){
+  .dashboard-options{
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-card{
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 520px){
+  .compact-header{
+    padding: 10px 12px;          /* ✅ un poco más compacto en móvil */
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+
+  .admin-logo{
+    flex: 1 1 auto;               /* ✅ logo a la izquierda */
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .header-controls{
+    flex: 0 0 auto;               /* ✅ botones a la derecha */
+    margin-left: auto;
+    flex-direction: row;          /* ✅ uno al lado del otro */
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  /* ✅ Botones un poco más pequeños (como pediste) */
+  .profile-btn{
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  .logout-btn{
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  .logo-text{
+    font-size: 15px;
+  }
+
+  .admin-content{
+    padding: 18px 14px 22px;
+  }
+
+  .dashboard-title{
+    font-size: 24px;
+  }
+
+  .dashboard-subtitle{
+    font-size: 14px;
+  }
+}
+
+
+
+
+/* =========================
+   Services Management - Acciones y Modal
+   (override fuerte para no pelear con tu .btn global)
+   ========================= */
+
+.services-actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ✅ Botones compactos y parejos (PC) */
+.service-action-btn{
+  width: auto !important;              /* IMPORTANT: anula tu .btn { width:100% } */
+  min-width: 150px;                    /* Editar y Cambiar estado del mismo tamaño */
+  height: 38px;                        /* compacto */
+  padding: 0 12px !important;
+  border-radius: 12px !important;
+  font-weight: 700 !important;
+  font-size: 0.90rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+
+/* Asegura misma altura visual en dropdown */
+.service-dropdown-toggle{
+  height: 38px !important;
+}
+
+/* ✅ En móvil: se apilan pero sin “gigantes” */
+@media (max-width: 576px){
+  .service-action-btn{
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* =========================
+   Paginación (texto centrado real)
+   ========================= */
+.pagination-controls{
+  gap: 12px;
+}
+
+.pagination-text{
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* =========================
+   Modal Servicios - estilo tipo Perfil
+   (FIX: X visible + footer no se corta)
+   ========================= */
+
+/* ✅ Asegura que el dialog no se desborde en pantalla */
+.ee-modal .modal-dialog{
+  max-width: 900px;
+  margin: 1rem auto;
+}
+
+/* ✅ Estructura tipo: header fijo + body scroll + footer fijo */
+.ee-modal-content.modal-content{
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10);
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+
+  /* clave para que no “corte” el footer */
+  max-height: calc(100vh - 2rem);
+}
+
+/* Header */
+.ee-modal-header.modal-header{
+  background: rgba(44, 62, 80, 0.08);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.ee-modal-title{
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* ✅ FIX 1: Botón X visible (más oscuro) */
+.ee-modal-header .btn-close{
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+/* Bootstrap usa un SVG en background-image; lo sobreescribimos por uno negro */
+.ee-modal-header .btn-close{
+  background: transparent
+    url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='%230f172a' d='M2.146 2.146a.5.5 0 0 1 .708 0L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e")
+    center/1.1em auto no-repeat !important;
+}
+
+.ee-modal-header .btn-close:hover{
+  opacity: 0.85 !important;
+}
+
+/* ✅ Body: scrollea, pero dejando espacio real para el footer */
+.ee-modal-body.modal-body{
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+
+  /* importantísimo: el body ocupa el espacio disponible */
+  flex: 1 1 auto;
+
+  /* un poco de aire al final para que nunca “toque” el footer */
+  padding-bottom: 18px;
+}
+
+/* Inputs profesionales */
+.ee-modal-content .form-control,
+.ee-modal-content .form-select,
+.ee-modal-content textarea.form-control{
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #f1f5f9;
+  color: #0f172a;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.ee-modal-content .form-control:focus,
+.ee-modal-content .form-select:focus,
+.ee-modal-content textarea.form-control:focus{
+  border-color: rgba(44, 62, 80, 0.45);
+  box-shadow: 0 0 0 4px rgba(44, 62, 80, 0.12);
+  background: #fff;
+}
+
+/* ✅ FIX 2: Footer siempre visible y con padding suficiente */
+.ee-modal-footer.modal-footer{
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+
+  /* evita que se “corte” visualmente */
+  padding: 14px 16px !important;
+
+  /* footer fijo dentro del flex modal */
+  flex: 0 0 auto;
+}
+
+/* Si algún .btn global te da width:100%, aquí lo limitamos SOLO dentro del modal footer */
+.ee-modal-footer .btn{
+  width: auto !important;
+  min-width: 120px;
+}
+
+
+/* =========================
+   Users Management - Acciones (mismo look que Servicios)
+   ========================= */
+
+.users-actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* En desktop: botones al lado */
+.user-action-btn{
+  min-width: 120px !important;
+  height: 36px !important;
+}
+
+/* En móvil: que se apilen bonitos */
+@media (max-width: 576px){
+  .users-actions{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .user-action-btn{
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+}
+
